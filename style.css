@@ -1,0 +1,43 @@
+* {
+    -moz-box-sizing: border-box;
+    -webkit-box-sizing: border-box;
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+html, body {
+  height: 100%;
+}
+
+body {
+  margin: 10px;
+}
+
+.gamepad {
+  /* canvas size: 1053 × 745 */
+  max-height: 745px;
+  max-width: 1053px;
+}
+
+.centre {
+  display: -webkit-box;   /* iOS 6-, Safari 3.1-6 */
+  display: -moz-box;      /* Firefox 2-21 */
+  display: -ms-flexbox;   /* IE 10+ */
+  display: -webkit-flex;  /* Chrome 4-20 */
+  display: flex;          /* Chrome 21+, Firefox 20+, Opera 12.1+ */
+
+  /* old way */
+  -ms-box-align: center;
+  -ms-flex-align: center;
+  -moz-box-align: center;
+  -webkit-box-align: center;
+  align-self: center;
+  -ms-align-self: center;
+  -moz-align-self: center;
+  -webkit-align-self: center;
+
+  /* new way */
+  align-items: center;
+  justify-content: center;
+}
