@@ -1,5 +1,6 @@
 (function () {
 
+
 var raf = window.requestAnimationFrame ||
   window.mozRequestAnimationFrame ||
   window.webkitRequestAnimationFrame;
@@ -12,19 +13,10 @@ var caf = window.cancelRequestAnimationFrame ||
   window.mozCancelRequestAnimationFrame ||
   window.webkitCancelRequestAnimationFrame;
 
-var hasEvents = 'ongamepadconnected' in window;
-var gamepads = {};
-var i = 0;
-
 function gamepadConnected(e) {
-  addGamepad(e.gamepad);
-}
-
-function addGamepad(gamepad) {
   console.log('Gamepad connected at index %d: %s. %d buttons, %d axes.',
-    gamepad.index, gamepad.id, gamepad.buttons.length, gamepad.axes.length);
-  gamepads[gamepad.index] = gamepad;
-  loop();
+    e.gamepad.index, e.gamepad.id, e.gamepad.buttons.length, e.gamepad.axes.length);
+  updateStatus();
 }
 
 function gamepadDisconnected(e) {
@@ -36,75 +28,166 @@ function removeGamepad(gamepad) {
   cancelLoop();
 }
 
-function loop() {
-  raf(updateStatus);
-}
 
-function updateStatus() {
-  if (!hasEvents) {
-    pollGamepads();
-  }
+var Gamepads = function () {
+  this._gamepadApis = ['getGamepads', 'webkitGetGamepads', 'webkitGamepads'];
+  this.gamepadsSupported = this._hasGamepads();
 
-  var j;
-  var gp;
+  this.axisThreshold = 0.15;
 
-  for (j in gamepads) {
-    gp = gamepads[j];
+  this.previous = [];
+  this.current = [];
+};
 
-    // look at `controller.buttons` and `controller.axes`.
-  }
 
-  loop();
-}
-
-function cancelLoop() {
-  //caf(updateStatus);
-}
-
-// todo: check if `mapping` is set to `standard`.
-
-function pollGamepads(polled) {
-  var gps = getGamepads();
-  var gp;
-
-  for (i = 0; i < gps.length; i++) {
-    gp = gps[i];
-
-    if (!gp) {
-      return;
-    }
-
-    // We have to continue polling because Chrome won't fire
-    // `gamepadconnected` if another gamepad is connected.
-    // window.cancelInterval(pollInterval);
-
-    if (gp.index in gamepads) {
-      gamepads[gp.index] = gp;
-    } else {
-      addGamepad(gp);
+Gamepads.prototype._hasGamepads = function () {
+  for (var i = 0; i < this._gamepadApis.length; i++) {
+    if (this._gamepadApis[i] in navigator) {
+      return true;
     }
   }
-}
+  return false;
+};
 
-function getGamepads() {
-  var apis = ['getGamepads', 'webkitGetGamepads', 'webkitGamepads'];
-  for (i = 0; i < apis.length; i++) {
-    if (apis[i] in navigator) {
-      return navigator[apis[i]]();
+
+Gamepads.prototype._getGamepads = function () {
+  for (var i = 0; i < this._gamepadApis.length; i++) {
+    if (this._gamepadApis[i] in navigator) {
+      return navigator[this._gamepadApis[i]]();
     }
   }
   return [];
+};
+
+
+/**
+* @function
+* @name Gamepads#update
+* @description
+*   Update the current and previous state of the gamepads.
+*   This must be called every frame for `wasPressed()` to work.
+*/
+Gamepads.prototype.update = function () {
+  var pads = this.poll();
+
+  for (var i = 0; i < pads.length; i++) {
+    this.previous[i] = this.current[i];
+    this.current[i] = pads[i];
+  }
+};
+
+
+/**
+* @function
+* @name Gamepads#poll
+* @description Poll for the latest data from the gamepad API.
+* @returns {Array} An array of gamepads and mappings for the model of the connected gamepad.
+* @example
+*   var gamepads = new Gamepads();
+*   var pads = gamepads.poll();
+*/
+Gamepads.prototype.poll = function () {
+  var pads = [];
+
+  if (this.gamepadsSupported) {
+    var padsRaw = this._getGamepads();
+    var pad;
+
+    for (var i = 0; i < padsRaw.length; i++) {
+      pad = padsRaw[i];
+
+      if (pad) {
+        pads.push({
+          raw: pad,
+          axes: pad.axes.map(this._mapAxis, this),
+          buttons: pad.buttons.map(this._mapButton, this)
+        });
+      }
+    }
+  }
+
+  return pads;
+};
+
+
+/**
+* @function
+* @name Gamepads#_mapAxis
+* @description Set the value for one of the analogue axes of the pad.
+* @param {Number} axis The button to get the value of.
+* @returns {Number} The value of the axis between -1 and 1.
+*/
+Gamepads.prototype._mapAxis = function (axis) {
+  if (Math.abs(axis) < this.axisThreshold) {
+    return 0;
+  }
+
+  return axis;
+};
+
+
+/**
+* @function
+* @name Gamepads#_mapButton
+* @description Set the value for one of the buttons of the pad.
+* @param {Number} button The button to get the value of.
+* @returns {Object} An object resembling a `GamepadButton` object.
+*/
+Gamepads.prototype._mapButton = function (button) {
+  if (typeof button === 'number') {
+    // Old versions of the API used to return just numbers instead
+    // of `GamepadButton` objects.
+    var GamepadButton = window.GamepadButton = function (obj) {
+      return {
+        pressed: obj.pressed,
+        value: obj.value
+      };
+    };
+    button = new GamepadButton({
+      pressed: button === 1.0,
+      value: button
+    });
+  }
+
+  return button;
+};
+
+
+
+var gamepads = new Gamepads();
+
+function updateStatus() {
+  var pads = gamepads.poll();
+  raf(updateStatus);
+  return pads;
 }
+
+function cancelLoop() {
+  if (pollInterval) {
+    window.clearInterval(pollInterval);
+  }
+
+  caf(updateStatus);
+}
+
 
 var pollInterval;
 
-if (hasEvents) {
+if ('chrome' in window) {
+  pollInterval = window.setInterval(function () {
+    var pads = gamepads.poll();
+
+    if (pads.length) {
+      console.log('Gamepad connected at index %d: %s. %d buttons, %d axes.',
+        pads[0].index, pads[0].id, pads[0].buttons.length, pads[0].axes.length);
+
+      window.clearInterval(pollInterval);
+      raf(updateStatus);
+    }
+  }, 100);
+} else {
   window.addEventListener('gamepadconnected', gamepadConnected);
   window.addEventListener('gamepaddisconnected', gamepadDisconnected);
-} else {
-  pollInterval = window.setInterval(function () {
-    pollGamepads(true);
-  }, 100);
 }
 
 })();
