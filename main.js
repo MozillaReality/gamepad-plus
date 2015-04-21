@@ -13,6 +13,17 @@ var caf = window.cancelRequestAnimationFrame ||
   window.mozCancelRequestAnimationFrame ||
   window.webkitCancelRequestAnimationFrame;
 
+
+if (!('GamepadButton' in window)) {
+  var GamepadButton = window.GamepadButton = function (obj) {
+    return {
+      pressed: obj.pressed,
+      value: obj.value
+    };
+  };
+}
+
+
 function gamepadConnected(e) {
   console.log('Gamepad connected at index %d: %s. %d buttons, %d axes.',
     e.gamepad.index, e.gamepad.id, e.gamepad.buttons.length, e.gamepad.axes.length);
@@ -137,12 +148,6 @@ Gamepads.prototype._mapButton = function (button) {
   if (typeof button === 'number') {
     // Old versions of the API used to return just numbers instead
     // of `GamepadButton` objects.
-    var GamepadButton = window.GamepadButton = function (obj) {
-      return {
-        pressed: obj.pressed,
-        value: obj.value
-      };
-    };
     button = new GamepadButton({
       pressed: button === 1.0,
       value: button
