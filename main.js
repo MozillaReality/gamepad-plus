@@ -55,8 +55,6 @@ utils.stripLeadingZeros = function (str) {
   return str.replace(/^0+(?=\d+)/g, '');
 };
 
-window.utils = utils;
-
 utils.triggerEvent = function (el, name, data) {
   data = data || {};
 
@@ -331,8 +329,6 @@ Gamepads.prototype.poll = function () {
       }
     }
   }
-
-  window.pads = pads;
 
   return pads;
 };
