@@ -106,6 +106,7 @@ var Gamepads = function () {
   this._gamepadProps = ['id', 'index', 'mapping', 'connected', 'timestamp', 'buttons', 'axes'];
   this.gamepadsSupported = this._hasGamepads();
 
+  this.buttonThreshold = 0.15;
   this.axisThreshold = 0.15;
 
   this.state = [];
@@ -368,6 +369,10 @@ Gamepads.prototype._mapButton = function (button) {
       pressed: button === 1.0,
       value: button
     });
+  }
+
+  if (button.pressed && Math.abs(button.value) < this.buttonThreshold) {
+    button.pressed = false;
   }
 
   return button;
