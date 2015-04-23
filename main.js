@@ -1,5 +1,16 @@
 (function (window) {
 
+if (!('performance' in window)) {
+  window.performance = {};
+}
+
+if (!('now' in window.performance)) {
+  window.performance.now = function () {
+    return +new Date();
+  };
+}
+
+
 var raf = window.requestAnimationFrame ||
   window.mozRequestAnimationFrame ||
   window.webkitRequestAnimationFrame;
@@ -324,6 +335,9 @@ Gamepads.prototype.poll = function () {
         };
 
         this._mapGamepad(padObj);
+
+        padObj.timestamp = pad.timestamp ? pad.timestamp : window.performance.now();
+        padObj.mapped.timestamp = padObj.mapped.timestamp ? padObj.mapped.timestamp : window.performance.now();
 
         pads.push(padObj);
       }
