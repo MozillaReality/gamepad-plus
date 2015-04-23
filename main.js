@@ -1,4 +1,4 @@
-(function () {
+(function (window) {
 
 var raf = window.requestAnimationFrame ||
   window.mozRequestAnimationFrame ||
@@ -457,8 +457,10 @@ Gamepads.prototype._mapGamepad = function (pad) {
 var gamepads = new Gamepads();
 gamepads.polling = true;
 
+var pads;
+
 function updateStatus() {
-  var pads = gamepads.poll();
+  pads = gamepads.poll();
   if (gamepads.polling) {
     raf(updateStatus);
   }
@@ -493,4 +495,7 @@ if (utils.browser !== 'firefox') {
   }, 100);
 }
 
-})();
+window.Gamepads = Gamepads;
+window.pads = pads;
+
+})(window);
