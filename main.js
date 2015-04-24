@@ -95,12 +95,14 @@ if (!('GamepadButton' in window)) {
 }
 
 
-var Gamepads = function () {
+var Gamepads = function (opts) {
   var self = this;
 
   if (!(self instanceof Gamepads)) {
-    return new Gamepads();
+    return new Gamepads(opts);
   }
+
+  self._allowedOpts = ['buttonThreshold', 'axisThreshold'];
 
   self._gamepadApis = ['getGamepads', 'webkitGetGamepads', 'webkitGamepads'];
   self._gamepadEvents = ['gamepadconnected', 'gamepaddisconnected'];
@@ -121,6 +123,13 @@ var Gamepads = function () {
 
   self._gamepadEvents.forEach(function (eventName) {
     window.addEventListener(eventName, addSeenEvent);
+  });
+
+  opts = opts || {};
+  Object.keys(opts).forEach(function (key) {
+    if (self._allowedOpts.indexOf(key) !== -1) {
+      self[key] = opts[key];
+    }
   });
 };
 
