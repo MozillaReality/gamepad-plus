@@ -1,5 +1,38 @@
 (function (window) {
 
+function clone(obj) {
+  if (obj === null || !(obj instanceof Object)) {
+    return obj;
+  }
+
+  if (obj instanceof Date) {
+    var copy = new Date();
+    copy.setTime(obj.getTime());
+    return copy;
+  }
+
+  if (obj instanceof Array) {
+    var copy = [];
+    for (var i = 0, len = obj.length; i < len; i++) {
+      copy[i] = clone(obj[i]);
+    }
+    return copy;
+  }
+
+  if (obj instanceof Object) {
+    var copy = {};
+    for (var attr in obj) {
+      if (attr in obj) {
+        copy[attr] = clone(obj[attr]);
+      }
+    }
+    return copy;
+  }
+
+  throw new Error('Unable to clone object of unexpected type!');
+}
+
+
 if (!('performance' in window)) {
   window.performance = {};
 }
@@ -102,18 +135,15 @@ var Gamepads = function (opts) {
     return new Gamepads(opts);
   }
 
-  self._allowedOpts = ['buttonThreshold', 'axisThreshold'];
-
+  self._allowedOpts = ['nonstandardEventsEnabled', 'axisThreshold'];
   self._gamepadApis = ['getGamepads', 'webkitGetGamepads', 'webkitGamepads'];
   self._gamepadEvents = ['gamepadconnected', 'gamepaddisconnected'];
   self._gamepadProps = ['id', 'index', 'mapping', 'connected', 'timestamp', 'buttons', 'axes'];
-  self.gamepadsSupported = self._hasGamepads();
-
   self._seenEvents = {};
 
-  self.buttonThreshold = 0.15;
   self.axisThreshold = 0.15;
-
+  self.gamepadsSupported = self._hasGamepads();
+  self.nonstandardEventsEnabled = true;
   self.previousState = {};
   self.state = {};
 
@@ -299,8 +329,10 @@ Gamepads.prototype._getGamepads = function () {
 
 
 Gamepads.prototype.addGamepad = Gamepads.prototype.updateGamepad = function (gamepad) {
-  this.previousState[gamepad.index] = this.state[gamepad.index];
-  this.state[gamepad.index] = gamepad;
+  gamepad = gamepad || Gamepads.defaultState;
+
+  this.previousState[gamepad.index] = clone(this.state[gamepad.index] || Gamepads.defaultState);
+  this.state[gamepad.index] = clone(gamepad);
 
   if (!this.hasSeenEvent(gamepad, {type: 'gamepadconnected'})) {
     this.fireConnectionEvent(gamepad, true);
@@ -323,29 +355,84 @@ Gamepads.prototype.removeGamepad = function (gamepad) {
 };
 
 
+Gamepads.prototype.observeButtonChanges = function (gamepad) {
+  var self = this;
+
+  var previousPad = self.previousState[gamepad.index];
+  var currentPad = self.state[gamepad.index];
+
+  if (!previousPad || !Object.keys(previousPad).length ||
+      !currentPad || !Object.keys(currentPad).length) {
+    return;
+  }
+
+  currentPad.buttons.forEach(function (button, buttonIdx) {
+    // Fire non-standard events, if needed.
+    if (button.value !== previousPad.buttons[buttonIdx].value) {
+      self.fireButtonEvent(currentPad, buttonIdx, button.value);
+    }
+  });
+};
+
+
+Gamepads.prototype.observeAxisChanges = function (gamepad) {
+  var self = this;
+
+  var previousPad = self.previousState[gamepad.index];
+  var currentPad = self.state[gamepad.index];
+
+  if (!previousPad || !Object.keys(previousPad).length ||
+      !currentPad || !Object.keys(currentPad).length) {
+    return;
+  }
+
+  currentPad.axes.forEach(function (axis, axisIdx) {
+    // Fire non-standard events, if needed.
+    if (axis !== previousPad.axes[axisIdx]) {
+      self.fireAxisMoveEvent(currentPad, axisIdx, axis);
+    }
+  });
+};
+
+
+Gamepads.defaultState = {
+  buttons: new Array(17),
+  axes: [0.0, 0.0, 0.0, 0.0]
+};
+for (var i = 0; i < 17; i++) {
+  Gamepads.defaultState.buttons[i] = {
+    pressed: false,
+    value: 0.0
+  };
+}
+
+
 /**
  * @function
  * @name Gamepads#update
  * @description
  *   Update the current and previous states of the gamepads.
- *   This must be called every frame for `wasPressed()` to work.
+ *   This must be called every frame for events to work.
  */
 Gamepads.prototype.update = function () {
   var self = this;
 
-  // Add/update connected gamepads (and fire polyfilled events, if needed).
   self.poll().forEach(function (pad) {
-    self.updateGamepad(pad.raw);
+    pad = pad.raw;
+
+    // Add/update connected gamepads (and fire polyfilled events, if needed).
+    self.updateGamepad(pad);
+
+    // Fire polyfilled non-standard events, if needed.
+    self.observeButtonChanges(pad);
+    self.observeAxisChanges(pad);
   });
 
-  var previousPad;
-  var currentPad;
-
-  // Remove disconnected gamepads (and fire polyfilled events, if needed).
   Object.keys(self.previousState).forEach(function (padIdx) {
     previousPad = self.previousState[padIdx];
     currentPad = self.state[padIdx];
 
+    // Remove disconnected gamepads (and fire polyfilled events, if needed).
     if (previousPad && self.existsGamepad(previousPad) &&
         !self.existsGamepad(currentPad)) {
 
@@ -427,13 +514,9 @@ Gamepads.prototype._mapButton = function (button) {
     // Old versions of the API used to return just numbers instead
     // of `GamepadButton` objects.
     button = new GamepadButton({
-      pressed: button === 1.0,
+      pressed: button === 1,
       value: button
     });
-  }
-
-  if (button.pressed && Math.abs(button.value) < this.buttonThreshold) {
-    button.pressed = false;
   }
 
   return button;
@@ -532,6 +615,46 @@ Gamepads.prototype.fireConnectionEvent = function (gamepad, connected) {
 };
 
 
+Gamepads.prototype.fireButtonEvent = function (gamepad, button, value) {
+  if (!this.nonstandardEventsEnabled || 'GamepadButtonEvent' in window) {
+    return;
+  }
+
+  var name = value === 1 ? 'gamepadbuttondown' : 'gamepadbuttonup';
+  var data = {
+    bubbles: false,
+    cancelable: false,
+    detail: {
+      button: button,
+      gamepad: gamepad
+    }
+  };
+  utils.triggerEvent(window, name, data);
+};
+
+
+Gamepads.prototype.fireAxisMoveEvent = function (gamepad, axis, value) {
+  if (!this.nonstandardEventsEnabled || 'GamepadAxisMoveEvent' in window) {
+    return;
+  }
+
+  if (Math.abs(value) < this.axisThreshold) {
+    return;
+  }
+
+  var data = {
+    bubbles: false,
+    cancelable: false,
+    detail: {
+      axis: axis,
+      gamepad: gamepad,
+      value: value
+    }
+  };
+  utils.triggerEvent(window, 'gamepadaxismove', data);
+};
+
+
 Gamepads.prototype.addSeenEvent = function (gamepad, e) {
   if (typeof this._seenEvents[gamepad.index] === 'undefined') {
     this._seenEvents[gamepad.index] = {};
@@ -561,49 +684,63 @@ Gamepads.prototype.removeSeenEvent = function (gamepad, e) {
 };
 
 
-
 var gamepads = new Gamepads();
 gamepads.polling = false;
 
-
-function gamepadConnected(e) {
-  console.log('Gamepad connected at index %d: %s. %d buttons, %d axes.',
-    e.gamepad.index, e.gamepad.id, e.gamepad.buttons.length, e.gamepad.axes.length);
-
-  updateStatus();
-}
-
-function gamepadDisconnected(e) {
-  console.log('Gamepad removed at index %d: %s.', e.gamepad.index, e.gamepad.id);
-}
-
-
-function updateStatus() {
-  if (gamepads.polling) {
-    return;
-  }
-
-  gamepads.polling = true;
-
-  gamepads.update();
-
-  raf(updateStatus);
-}
-
-function cancelLoop() {
-  gamepads.polling = false;
-
-  if (gamepads.nonFirefoxInterval) {
-    window.clearInterval(gamepads.nonFirefoxInterval);
-  }
-
-  caf(updateStatus);
-}
-
-
 if (gamepads.gamepadsSupported) {
+
+  var updateStatus = function () {
+    gamepads.polling = true;
+    gamepads.update();
+    raf(updateStatus);
+  };
+
+  var cancelLoop = function () {
+    gamepads.polling = false;
+
+    if (gamepads.nonFirefoxInterval) {
+      window.clearInterval(gamepads.nonFirefoxInterval);
+    }
+
+    caf(updateStatus);
+  };
+
+
+  var gamepadConnected = function (e) {
+    console.log('Gamepad connected at index %d: %s. %d buttons, %d axes.',
+      e.gamepad.index, e.gamepad.id, e.gamepad.buttons.length, e.gamepad.axes.length);
+
+    updateStatus();
+  };
+
+  var gamepadDisconnected = function (e) {
+    console.log('Gamepad removed at index %d: %s.', e.gamepad.index, e.gamepad.id);
+  };
+
   window.addEventListener('gamepadconnected', gamepadConnected);
   window.addEventListener('gamepaddisconnected', gamepadDisconnected);
+
+  if (gamepads.nonstandardEventsEnabled) {
+    var gamepadButtonDown = function (e) {
+      console.log('Gamepad button down at index %d: %s. Button: %d.',
+        e.gamepad.index, e.gamepad.id, e.button);
+    };
+
+    var gamepadButtonUp = function (e) {
+      console.log('Gamepad button up at index %d: %s. Button: %d.',
+        e.gamepad.index, e.gamepad.id, e.button);
+    };
+
+    var gamepadAxisMove = function (e) {
+      console.log('Gamepad axis move at index %d: %s. Axis: %d. Value: %f.',
+        e.gamepad.index, e.gamepad.id, e.axis, e.value);
+    };
+
+    window.addEventListener('gamepadbuttondown', gamepadButtonDown);
+    window.addEventListener('gamepadbuttonup', gamepadButtonUp);
+
+    window.addEventListener('gamepadaxismove', gamepadAxisMove);
+  }
 
   // At the time of this writing, Firefox is the only browser that correctly
   // fires the `gamepadconnected` event. For the other browsers
