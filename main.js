@@ -486,7 +486,7 @@ Gamepads.prototype.poll = function () {
         pad.attributes = this._getAttributes(pad);
       }
 
-      if (pad.timestamp) {
+      if (!pad.timestamp) {
         pad.timestamp = window.performance.now();
       }
 
