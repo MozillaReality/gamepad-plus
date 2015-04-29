@@ -135,13 +135,15 @@ var Gamepads = function (opts) {
     return new Gamepads(opts);
   }
 
-  self._allowedOpts = ['nonstandardEventsEnabled', 'axisThreshold'];
+  self._allowedOpts = ['gamepadAttributesEnabled', 'nonstandardEventsEnabled', 'axisThreshold'];
   self._gamepadApis = ['getGamepads', 'webkitGetGamepads', 'webkitGamepads'];
   self._gamepadEvents = ['gamepadconnected', 'gamepaddisconnected'];
-  self._gamepadProps = ['id', 'index', 'mapping', 'connected', 'timestamp', 'buttons', 'axes'];
+  self._gamepadProps = ['id', 'index', 'mapping', 'connected', 'timestamp', 'buttons', 'axes', 'attributes'];
   self._seenEvents = {};
 
   self.axisThreshold = 0.15;
+  self.dataSource = this.getGamepadDataSource();
+  self.gamepadAttributesEnabled = true;
   self.gamepadsSupported = self._hasGamepads();
   self.nonstandardEventsEnabled = true;
   self.previousState = {};
@@ -164,18 +166,18 @@ var Gamepads = function (opts) {
 };
 
 
-Gamepads.prototype._getVendorProductIds = function (id) {
-  var bits = id.split('-');
+Gamepads.prototype._getVendorProductIds = function (gamepad) {
+  var bits = gamepad.id.split('-');
   var match;
 
   if (bits.length < 2) {
-    match = id.match(/vendor: (\w+) product: (\w+)/i);
+    match = gamepad.id.match(/vendor: (\w+) product: (\w+)/i);
     if (match) {
       return match.slice(1).map(utils.stripLeadingZeros);
     }
   }
 
-  match = id.match(/(\w+)-(\w+)/);
+  match = gamepad.id.match(/(\w+)-(\w+)/);
   if (match) {
     return match.slice(1).map(utils.stripLeadingZeros);
   }
@@ -241,8 +243,8 @@ Gamepads.CustomMappings = {
   },
   n64_gecko: {
     engine: 'gecko',
-    vendor_id: '79',
-    product_id: '6',
+    vendorId: '79',
+    productId: '6',
     buttons: [
       2,   // PAD_FACE_1 -- C-down button
       1,   // PAD_FACE_2 -- C-right button
@@ -271,8 +273,8 @@ Gamepads.CustomMappings = {
   },
   n64_webkit: {
     engine: 'webkit',
-    vendor_id: '79',
-    product_id: '6',
+    vendorId: '79',
+    productId: '6',
     buttons: [
       2,   // FACE_1 -- C-down button
       1,   // FACE_2 -- C-right button
@@ -300,8 +302,8 @@ Gamepads.CustomMappings = {
     ]
   },
   xbox_gecko: {
-    vendor_id: '45e',
-    product_id: '28e',
+    vendorId: '45e',
+    productId: '28e',
     buttons: [0, 1, 2, 3, 4, 5, 15, 16, 9, 8, 6, 7, 11, 12, 13, 14, 10],
     axes: [0, 1, 2, 3]
   },
@@ -444,6 +446,31 @@ Gamepads.prototype.update = function () {
 
 /**
  * @function
+ * @name Gamepads#getGamepadDataSource
+ * @description Get gamepad data source (e.g., linuxjoy, hid, dinput, xinput).
+ * @returns {String} A string of gamepad data source.
+ */
+Gamepads.prototype.getGamepadDataSource = function () {
+  var dataSource;
+  if (navigator.platform.match(/^Linux/)) {
+    dataSource = 'linuxjoy';
+  } else if (navigator.platform.match(/^Mac/)) {
+    dataSource = 'hid';
+  } else if (navigator.platform.match(/^Win/)) {
+    var m = navigator.userAgent.match('Gecko/(..)');
+    if (m && parseInt(m[1]) < 32) {
+      dataSource = 'dinput';
+    } else {
+      dataSource = 'hid';
+    }
+    // TODO: Determine when `xinput` is used.
+  }
+  return dataSource;
+};
+
+
+/**
+ * @function
  * @name Gamepads#poll
  * @description Poll for the latest data from the gamepad API.
  * @returns {Array} An array of gamepads and mappings for the model of the connected gamepad.
@@ -464,12 +491,12 @@ Gamepads.prototype.poll = function () {
       pad = padsRaw[i];
 
       if (pad) {
-        padIds = this._getVendorProductIds(pad.id);
+        if (this.gamepadAttributesEnabled) {
+          pad.attributes = this._getAttributes(pad);
+        }
 
         padObj = {
-          raw: pad,
-          vendor_id: padIds[0],
-          product_id: padIds[1]
+          raw: pad
         };
 
         this._mapGamepad(padObj);
@@ -483,6 +510,24 @@ Gamepads.prototype.poll = function () {
   }
 
   return pads;
+};
+
+
+/**
+ * @function
+ * @name Gamepads#_getAttributes
+ * @description Generate and return the attributes of a gamepad.
+ * @param {Object} gamepad The gamepad object.
+ * @returns {Object} The attributes for this gamepad.
+ */
+Gamepads.prototype._getAttributes = function (gamepad) {
+  var padIds = this._getVendorProductIds(gamepad);
+  return {
+    vendorId: padIds[0],
+    productId: padIds[1],
+    name: gamepad.id,
+    dataSource: this.dataSource
+  };
 };
 
 
@@ -529,8 +574,12 @@ Gamepads.prototype._doesMapMatch = function (pad, mapping) {
     return false;
   }
 
-  return mapping.vendor_id === pad.vendor_id &&
-         mapping.product_id === pad.product_id;
+  if (!pad.attributes) {
+    return false;
+  }
+
+  return mapping.vendorId === pad.attributes.vendorId &&
+         mapping.productId === pad.attributes.productId;
 };
 
 
