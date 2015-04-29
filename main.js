@@ -138,7 +138,6 @@ var Gamepads = function (opts) {
   self._allowedOpts = ['gamepadAttributesEnabled', 'nonstandardEventsEnabled', 'axisThreshold'];
   self._gamepadApis = ['getGamepads', 'webkitGetGamepads', 'webkitGamepads'];
   self._gamepadEvents = ['gamepadconnected', 'gamepaddisconnected'];
-  self._gamepadProps = ['id', 'index', 'mapping', 'connected', 'timestamp', 'buttons', 'axes', 'attributes'];
   self._seenEvents = {};
 
   self.axisThreshold = 0.15;
@@ -420,8 +419,6 @@ Gamepads.prototype.update = function () {
   var self = this;
 
   self.poll().forEach(function (pad) {
-    pad = pad.raw;
-
     // Add/update connected gamepads (and fire polyfilled events, if needed).
     self.updateGamepad(pad);
 
@@ -495,16 +492,13 @@ Gamepads.prototype.poll = function () {
           pad.attributes = this._getAttributes(pad);
         }
 
-        padObj = {
-          raw: pad
-        };
+        if (pad.timestamp) {
+          pad.timestamp = window.performance.now();
+        }
 
-        this._mapGamepad(padObj);
+        this._mapGamepad(pad);
 
-        padObj.timestamp = pad.timestamp ? pad.timestamp : window.performance.now();
-        padObj.mapped.timestamp = padObj.mapped.timestamp ? padObj.mapped.timestamp : window.performance.now();
-
-        pads.push(padObj);
+        pads.push(pad);
       }
     }
   }
@@ -603,19 +597,16 @@ Gamepads.prototype._mapGamepad = function (pad) {
   var self = this;
 
   pad._remapped = false;
-  pad.mapped = {};
 
-  self._gamepadProps.forEach(function (prop) {
-    pad.mapped[prop] = pad.raw[prop];
-  });
+  pad.mapped = clone(pad);
 
-  pad.mapped.buttons = pad.raw.buttons.map(function (button, idx) {
+  pad.mapped.buttons = pad.buttons.map(function (button, idx) {
     pad[self._getButtonName(idx)] = button;
 
     return self._mapButton(button);
   });
 
-  pad.mapped.axes = pad.raw.axes.map(function (axis, idx) {
+  pad.mapped.axes = pad.axes.map(function (axis, idx) {
     pad[self._getAxisName(idx)] = axis;
 
     return self._mapAxis(axis);
