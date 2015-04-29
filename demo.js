@@ -13,7 +13,7 @@ var caf = window.cancelRequestAnimationFrame ||
   window.webkitCancelRequestAnimationFrame;
 
 
-var gamepads = new Gamepads();
+var gamepads = new window.Gamepads();
 gamepads.polling = false;
 
 if (gamepads.gamepadsSupported) {
@@ -74,7 +74,7 @@ if (gamepads.gamepadsSupported) {
   // fires the `gamepadconnected` event. For the other browsers
   // <https://crbug.com/344556>, we start polling every 100ms until the
   // first gamepad is connected.
-  if (utils.browser !== 'firefox') {
+  if (window.utils.browser !== 'firefox') {
     gamepads.nonFirefoxInterval = window.setInterval(function () {
       if (gamepads.poll().length) {
         gamepads.updateStatus();

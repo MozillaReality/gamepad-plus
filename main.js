@@ -5,28 +5,30 @@ function clone(obj) {
     return obj;
   }
 
+  var ret;
+
   if (obj instanceof Date) {
-    var copy = new Date();
-    copy.setTime(obj.getTime());
-    return copy;
+    ret = new Date();
+    ret.setTime(obj.getTime());
+    return ret;
   }
 
   if (obj instanceof Array) {
-    var copy = [];
+    ret = [];
     for (var i = 0, len = obj.length; i < len; i++) {
-      copy[i] = clone(obj[i]);
+      ret[i] = clone(obj[i]);
     }
-    return copy;
+    return ret;
   }
 
   if (obj instanceof Object) {
-    var copy = {};
+    ret = {};
     for (var attr in obj) {
       if (attr in obj) {
-        copy[attr] = clone(obj[attr]);
+        ret[attr] = clone(obj[attr]);
       }
     }
-    return copy;
+    return ret;
   }
 
   throw new Error('Unable to clone object of unexpected type!');
@@ -90,10 +92,12 @@ utils.triggerEvent = function (el, name, data) {
   data = data || {};
   data.detail = data.detail || {};
 
+  var event;
+
   if ('CustomEvent' in window) {
-    var event = new CustomEvent(name, data.detail);
+    event = new CustomEvent(name, data.detail);
   } else {
-    var event = document.createEvent('CustomEvent');
+    event = document.createEvent('CustomEvent');
     event.initCustomEvent(name, data.bubbles, data.cancelable, data.detail);
   }
 
@@ -297,7 +301,7 @@ Gamepads.CustomMappings = {
 
 
 Gamepads.prototype._hasGamepads = function () {
-  for (var i = 0; i < this._gamepadApis.length; i++) {
+  for (var i = 0, len = this._gamepadApis.length; i < len; i++) {
     if (this._gamepadApis[i] in navigator) {
       return true;
     }
@@ -307,7 +311,7 @@ Gamepads.prototype._hasGamepads = function () {
 
 
 Gamepads.prototype._getGamepads = function () {
-  for (var i = 0; i < this._gamepadApis.length; i++) {
+  for (var i = 0, len = this._gamepadApis.length; i < len; i++) {
     if (this._gamepadApis[i] in navigator) {
       return navigator[this._gamepadApis[i]]();
     }
@@ -404,6 +408,8 @@ for (var i = 0; i < 17; i++) {
  */
 Gamepads.prototype.update = function () {
   var self = this;
+  var previousPad;
+  var currentPad;
 
   self.poll().forEach(function (pad) {
     // Add/update connected gamepads (and fire polyfilled events, if needed).
@@ -468,25 +474,25 @@ Gamepads.prototype.poll = function () {
   if (this.gamepadsSupported) {
     var padsRaw = this._getGamepads();
     var pad;
-    var padIds;
-    var padObj;
 
-    for (var i = 0; i < padsRaw.length; i++) {
+    for (var i = 0, len = padsRaw.length; i < len; i++) {
       pad = padsRaw[i];
 
-      if (pad) {
-        if (this.gamepadAttributesEnabled) {
-          pad.attributes = this._getAttributes(pad);
-        }
-
-        if (pad.timestamp) {
-          pad.timestamp = window.performance.now();
-        }
-
-        this._mapGamepad(pad);
-
-        pads.push(pad);
+      if (!pad) {
+        continue;
       }
+
+      if (this.gamepadAttributesEnabled) {
+        pad.attributes = this._getAttributes(pad);
+      }
+
+      if (pad.timestamp) {
+        pad.timestamp = window.performance.now();
+      }
+
+      this._mapGamepad(pad);
+
+      pads.push(pad);
     }
   }
 
