@@ -1,3 +1,10 @@
-# gamepad-mapper 🎮
+# gamepad-plus 🎮
 
-A tool to normalise gamepads in the wild to the [Standard Gamepad layout](https://dvcs.w3.org/hg/gamepad/raw-file/default/gamepad.html#remapping) for the [Gamepad API](https://dvcs.w3.org/hg/gamepad/raw-file/default/gamepad.html).
+A superb library that extends the [Gamepad API](https://w3c.github.io/gamepad/gamepad.html) with super powers.
+
+## Features
+
+* polyfill the standard events, when unsupported: `gamepadconnected`, `gamepaddisconnected`
+* polyfill the non-standard events, when unsupported: `gamepadbuttondown`, `gamepadbuttonup`, `gamepadaxismove`
+* normalise mapping for gamepads in the wild to the [Standard Gamepad layout](https://w3c.github.io/gamepad/gamepad.html#remapping)
+* attach an object of attributes about the gamepad and data source
