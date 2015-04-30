@@ -1,0 +1,632 @@
+@import 'https://fonts.googleapis.com/css?family=Roboto:200,400,500';
+
+body {
+  -webkit-font-smoothing: antialiased;
+  background: rgb(240, 240, 240);
+  font-family: Roboto, Helvetica, sans-serif;
+  margin: 0;
+  padding: 0;
+}
+
+/* Header */
+
+h1 {
+  font-size: 24px;
+  font-weight: 500;
+  margin: 50px 0 0;
+  padding: 0;
+  text-align: center;
+}
+
+h2 {
+  font-size: 18px;
+  font-weight: 200;
+  margin: 20px 0 0;
+  padding: 0;
+  text-align: center;
+}
+
+#menu {
+  font-size: 18px;
+  font-weight: 200;
+  margin: 20px 0;
+  text-align: center;
+}
+
+#menu * {
+  vertical-align: baseline;
+}
+
+#menu label {
+  padding: 0 10px 0 5px;
+}
+
+a {
+  color: inherit;
+}
+
+/* Error messages */
+
+.gamepad-warning {
+  display: none;
+  font-size: 18px;
+  font-weight: 200;
+  line-height: 24px;
+  padding: 100px 50px;
+  text-align: center;
+}
+
+.gamepad-warning.visible {
+  display: block;
+}
+
+/* Gamepad display */
+
+#gamepads {
+  margin: 50px 0 0;
+  padding: 0;
+
+  list-style: none;
+
+  white-space: nowrap;
+  text-align: center;
+}
+.gamepad {
+  width: 940px;
+  height: 720px;
+  margin-left: -30px;
+
+  position: relative;
+  z-index: 102;
+  display: inline-block;
+
+  white-space: normal;
+}
+.gamepad::after {
+  content: '';
+  width: 100%;
+  height: 100%;
+  position: absolute;
+  left: 0;
+  top: 0;
+
+  z-index: 200;
+
+  background: url(images/gamepad-body.png);
+  background-size: 730px 499px;
+  background-position: 120px 40px;
+  background-repeat: no-repeat;
+}
+.gamepad > .index {
+  position: absolute;
+  left: 437px;
+  top: 300px;
+  width: 100px;
+
+  z-index: 500;
+
+  text-shadow: 0 -1px 2px rgba(0, 0, 0, .5);
+  font-weight: 500;
+  font-size: 40px;
+  color: rgb(120, 120, 120);
+}
+
+.gamepad > .name {
+  position: absolute;
+  left: 385px;
+  right: 352px;
+  top: 154px;
+  height: 30px;
+  line-height: 30px;
+
+  z-index: 500;
+
+  font-weight: bold;
+  font-size: 13px;
+  color: rgb(224, 224, 224);
+  text-shadow: 0 0 1px rgb(192, 192, 192);
+  text-align: center;
+}
+
+/* Buttons */
+
+.gamepad > .buttons > *::after {
+  position: absolute;
+  content: '';
+  border-radius: 100%;
+  background: #000;
+
+  opacity: 0;
+}
+.gamepad > .buttons > .pressed::after {
+  opacity: .5;
+}
+.gamepad > .buttons > .top-shoulder {
+  width: 170px;
+  height: 70px;
+
+  z-index: 200;
+
+  position: absolute;
+
+  background: url(images/shoulder-top.png) no-repeat 50%;
+  background-size: 164px 60px;
+}
+.gamepad > .buttons > [name='button-left-shoulder-top'] {
+  left: 185px;
+  top: 66px;
+}
+.gamepad > .buttons > [name='button-right-shoulder-top'] {
+  left: 618px;
+  top: 64px;
+}
+.gamepad > .buttons > .top-shoulder.pressed {
+  margin-top: 5px;
+}
+.gamepad > .buttons > .bottom-shoulder {
+  width: 170px;
+  height: 70px;
+
+  z-index: 150;
+
+  position: absolute;
+
+  background-size: 127px 44px;
+  background-repeat: no-repeat;
+  background-position: 50%;
+  background-image: url(images/shoulder-bottom.png);
+}
+.gamepad > .buttons > [name='button-left-shoulder-bottom'] {
+  left: 185px;
+  top: 46px;
+}
+.gamepad > .buttons > [name='button-right-shoulder-bottom'] {
+  left: 618px;
+  top: 44px;
+}
+.gamepad > .buttons > .bottom-shoulder.pressed {
+  margin-top: 5px;
+}
+.gamepad > .buttons > .face {
+  width: 50px;
+  height: 50px;
+
+  z-index: 300;
+
+  position: absolute;
+
+  background-size: 42px 42px;
+  background-repeat: no-repeat;
+  background-position: 50%;
+}
+.gamepad > .buttons > .face::after {
+  left: 5px;
+  top: 5px;
+  right: 5px;
+  bottom: 5px;
+}
+.gamepad > .buttons > [name='button-1'] {
+  left: 676px;
+  top: 241px;
+  background-image: url(images/button-0.png);
+}
+.gamepad > .buttons > [name='button-2'] {
+  left: 718px;
+  top: 200px;
+  background-image: url(images/button-1.png);
+}
+.gamepad > .buttons > [name='button-3'] {
+  left: 635px;
+  top: 200px;
+  background-image: url(images/button-2.png);
+}
+.gamepad > .buttons > [name='button-4'] {
+  left: 677px;
+  top: 158px;
+  background-image: url(images/button-3.png);
+}
+
+.gamepad > .buttons > [name='button-dpad-bottom'] {
+  left: 246px;
+  top: 242px;
+  background-image: url(images/button-down.png);
+}
+.gamepad > .buttons > [name='button-dpad-right'] {
+  left: 286px;
+  top: 201px;
+  background-image: url(images/button-right.png);
+}
+.gamepad > .buttons > [name='button-dpad-left'] {
+  left: 203px;
+  top: 201px;
+  background-image: url(images/button-left.png);
+}
+.gamepad > .buttons > [name='button-dpad-top'] {
+  left: 244px;
+  top: 159px;
+  background-image: url(images/button-up.png);
+}
+.gamepad > .buttons > .select-start {
+  width: 90px;
+  height: 90px;
+
+  z-index: 300;
+
+  position: absolute;
+
+  background-size: 41px 41px;
+  background-repeat: no-repeat;
+  background-position: 50%;
+
+  background-image: url(images/button-select-start.png);
+}
+.gamepad > .buttons > .select-start::after {
+  left: 25px;
+  top: 25px;
+  right: 24px;
+  bottom: 25px;
+}
+.gamepad > .buttons > [name='button-select'] {
+  left: 388px;
+  top: 178px;
+}
+.gamepad > .buttons > [name='button-start'] {
+  left: 492px;
+  top: 178px;
+}
+
+/* Sticks */
+
+.gamepad > .buttons > .stick {
+  width: 190px;
+  height: 190px;
+
+  z-index: 300;
+
+  position: absolute;
+
+  background-size: 91px 91px;
+  background-repeat: no-repeat;
+  background-position: 50%;
+
+  background-image: url(images/stick.png);
+}
+.gamepad > .buttons > .stick::after {
+  left: 54px;
+  top: 54px;
+  right: 54px;
+  bottom: 54px;
+}
+
+.gamepad > .buttons > [name='stick-1'] {
+  left: 286px;
+  top: 243px;
+}
+.gamepad > .buttons > [name='stick-2'] {
+  left: 495px;
+  top: 243px;
+}
+
+/* Labels */
+
+.gamepad > .labels label {
+  z-index: 800;
+  color: #000;
+  font-size: 18px;
+  line-height: 24px;
+
+  width: 120px;
+  margin-left: -60px;
+  margin-top: 0;
+  display: block;
+  text-align: center;
+  font-weight: normal;
+
+  position: absolute;
+
+  opacity: .25;
+  -webkit-transition: opacity 1500ms;
+  -webkit-transition-delay: 500ms;
+  -moz-transition: opacity 1500ms;
+  -moz-transition-delay: 500ms;
+  transition: opacity 1.5s;
+}
+.gamepad > .labels label::before,
+.gamepad > .labels label::after {
+  font-size: 11px;
+  display: block;
+  font-weight: normal;
+  line-height: 11px;
+}
+.gamepad > .labels > .extra-inputs > label {
+  position: static;
+  display: inline-block;
+  margin-left: 0;
+}
+.gamepad > .labels > .extra-inputs > label::before {
+  content: attr(description);
+}
+.gamepad > .labels > .extra-inputs > label::after {
+  content: attr(access);
+}
+.gamepad > .labels label.visible {
+  opacity: 1 !important;
+  -webkit-transition: opacity 100ms;
+  -webkit-transition-delay: 0;
+  -moz-transition: opacity 100ms;
+  -moz-transition-delay: 0;
+}
+.gamepad > .labels label.positive {
+  color: rgb(0, 140, 0);
+}
+.gamepad > .labels label.negative {
+  color: rgb(200, 0, 0);
+}
+
+.gamepad > .labels > label[for="button-1"] {
+  left: 870px;
+  top: 191px;
+}
+.gamepad > .labels > label[for="button-1"]::before {
+  content: attr(data-name);
+}
+.gamepad > .labels > label[for="button-1"]::after {
+  content: attr(data-index);
+}
+.gamepad > .labels > label[for="button-2"] {
+  left: 870px;
+  top: 251px;
+}
+.gamepad > .labels > label[for="button-2"]::before {
+  content: attr(data-name);
+}
+.gamepad > .labels > label[for="button-2"]::after {
+  content: attr(data-index);
+}
+.gamepad > .labels > label[for="button-3"] {
+  left: 880px;
+  top: 311px;
+}
+.gamepad > .labels > label[for="button-3"]::before {
+  content: attr(data-name);
+}
+.gamepad > .labels > label[for="button-3"]::after {
+  content: attr(data-index);
+}
+.gamepad > .labels > label[for="button-4"] {
+  left: 890px;
+  top: 371px;
+}
+.gamepad > .labels > label[for="button-4"]::before {
+  content: attr(data-name);
+}
+.gamepad > .labels > label[for="button-4"]::after {
+  content: attr(data-index);
+}
+.gamepad > .labels > label[for="button-dpad-top"] {
+  left: 100px;
+  top: 191px;
+}
+.gamepad > .labels > label[for="button-dpad-top"]::before {
+  content: attr(data-name);
+}
+.gamepad > .labels > label[for="button-dpad-top"]::after {
+  content: attr(data-index);
+}
+.gamepad > .labels > label[for="button-dpad-left"] {
+  left: 100px;
+  top: 251px;
+}
+.gamepad > .labels > label[for="button-dpad-left"]::before {
+  content: attr(data-name);
+}
+.gamepad > .labels > label[for="button-dpad-left"]::after {
+  content: attr(data-index);
+}
+.gamepad > .labels > label[for="button-dpad-right"] {
+  left: 90px;
+  top: 311px;
+}
+.gamepad > .labels > label[for="button-dpad-right"]::before {
+  content: attr(data-name);
+}
+.gamepad > .labels > label[for="button-dpad-right"]::after {
+  content: attr(data-index);
+}
+.gamepad > .labels > label[for="button-dpad-bottom"] {
+  left: 80px;
+  top: 371px;
+}
+.gamepad > .labels > label[for="button-dpad-bottom"]::before {
+  content: attr(data-name);
+}
+.gamepad > .labels > label[for="button-dpad-bottom"]::after {
+  content: attr(data-index);
+}
+.gamepad > .labels > label[for="button-left-shoulder-top"] {
+  left: 210px;
+  top: 10px;
+}
+.gamepad > .labels > label[for="button-left-shoulder-top"]::before {
+  content: attr(data-name);
+}
+.gamepad > .labels > label[for="button-left-shoulder-top"]::after {
+  content: attr(data-index);
+}
+.gamepad > .labels > label[for="button-left-shoulder-bottom"] {
+  left: 320px;
+  top: 10px;
+}
+.gamepad > .labels > label[for="button-left-shoulder-bottom"]::before {
+  content: attr(data-name);
+}
+.gamepad > .labels > label[for="button-left-shoulder-bottom"]::after {
+  content: attr(data-index);
+}
+.gamepad > .labels > label[for="button-right-shoulder-top"] {
+  left: 750px;
+  top: 10px;
+}
+.gamepad > .labels > label[for="button-right-shoulder-top"]::before {
+  content: attr(data-name);
+}
+.gamepad > .labels > label[for="button-right-shoulder-top"]::after {
+  content: attr(data-index);
+}
+.gamepad > .labels > label[for="button-right-shoulder-bottom"] {
+  left: 640px;
+  top: 10px;
+}
+.gamepad > .labels > label[for="button-right-shoulder-bottom"]::before {
+  content: attr(data-name);
+}
+.gamepad > .labels > label[for="button-right-shoulder-bottom"]::after {
+  content: attr(data-index);
+}
+.gamepad > .labels > label[for="button-select"] {
+  left: 440px;
+  top: 60px;
+}
+.gamepad > .labels > label[for="button-select"]::before {
+  content: attr(data-name);
+}
+.gamepad > .labels > label[for="button-select"]::after {
+  content: attr(data-index);
+}
+.gamepad > .labels > label[for="button-start"] {
+  left: 540px;
+  top: 60px;
+}
+.gamepad > .labels > label[for="button-start"]::before {
+  content: attr(data-name);
+}
+.gamepad > .labels > label[for="button-start"]::after {
+  content: attr(data-index);
+}
+.gamepad > .labels > label[for="stick-1-axis-x"] {
+  left: 380px;
+  top: 441px;
+}
+.gamepad > .labels > label[for="stick-1-axis-x"]::before {
+  content: attr(data-name);
+}
+.gamepad > .labels > label[for="stick-1-axis-x"]::after {
+  content: attr(data-index);
+}
+.gamepad > .labels > label[for="stick-1-axis-y"] {
+  left: 380px;
+  top: 501px;
+}
+.gamepad > .labels > label[for="stick-1-axis-y"]::before {
+  content: attr(data-name);
+}
+.gamepad > .labels > label[for="stick-1-axis-y"]::after {
+  content: attr(data-index);
+}
+.gamepad > .labels > label[for="stick-1"] {
+  left: 380px;
+  top: 561px;
+}
+.gamepad > .labels > label[for="stick-1"]::before {
+  content: attr(data-name);
+}
+.gamepad > .labels > label[for="stick-1"]::after {
+  content: attr(data-index);
+}
+.gamepad > .labels > label[for="stick-2-axis-x"] {
+  left: 590px;
+  top: 441px;
+}
+.gamepad > .labels > label[for="stick-2-axis-x"]::before {
+  content: attr(data-name);
+}
+.gamepad > .labels > label[for="stick-2-axis-x"]::after {
+  content: attr(data-index);
+}
+.gamepad > .labels > label[for="stick-2-axis-y"] {
+  left: 590px;
+  top: 501px;
+}
+.gamepad > .labels > label[for="stick-2-axis-y"]::before {
+  content: attr(data-name);
+}
+.gamepad > .labels > label[for="stick-2-axis-y"]::after {
+  content: attr(data-index);
+}
+.gamepad > .labels > label[for="stick-2"] {
+  left: 590px;
+  top: 561px;
+}
+.gamepad > .labels > label[for="stick-2"]::before {
+  content: attr(data-name);
+}
+.gamepad > .labels > label[for="stick-2"]::after {
+  content: attr(data-index);
+}
+
+/* Raw mode (no visuals) */
+
+#gamepads.raw > li > .labels label {
+  opacity: .5;
+}
+#gamepads:not(.raw) > li > .labels > .extra-inputs {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 60px;
+
+  text-align: center;
+}
+#gamepads.raw > li > .name {
+  display: none;
+}
+#gamepads.raw > li > .index {
+  position: absolute;
+  left: 0;
+  right: 0;
+  width: auto;
+  top: 0;
+  text-shadow: none;
+}
+#gamepads.raw > li::after {
+  display: none; /* Hide gamepad body */
+}
+#gamepads.raw > li > .buttons {
+  display: none; /* Hide buttons */
+}
+#gamepads.raw > li > .labels {
+  margin: 0 50px;
+  margin-top: 100px;
+}
+#gamepads.raw > li label {
+  position: static;
+  display: inline-block;
+  margin-left: 0;
+  height: 80px;
+}
+#gamepads.raw > li > .labels > .extra-inputs {
+  margin-top: 50px;
+}
+
+/* Iframe mode */
+
+body.iframe {
+  background: inherit;
+}
+body.iframe #menu {
+  position: fixed;
+  width: 100%;
+}
+body.iframe #gamepads {
+  margin-top: 0;
+  padding-top: 60px;
+}
+body.iframe h1,
+body.iframe h2 {
+  display: none;
+}
+body.iframe #no-gamepads-connected,
+body.iframe #no-gamepad-support {
+  padding: 400px 50px 0 50px;
+}

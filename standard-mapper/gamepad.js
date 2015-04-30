@@ -1,21 +1,3 @@
-/**
- * Copyright 2012 Google Inc. All Rights Reserved.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- * @author mwichary@google.com (Marcin Wichary)
- */
- 
 var gamepadSupport = {
   // A number of typical buttons recognized by Gamepad API and mapped to
   // standard controls. Any extraneous buttons will have larger indexes.
@@ -25,10 +7,10 @@ var gamepadSupport = {
   // standard controls. Any extraneous buttons will have larger indexes.
   TYPICAL_AXIS_COUNT: 4,
 
-  // Whether we’re requestAnimationFrameing like it’s 1999.
+  // Whether we're requestAnimationFrameing like it's 1999.
   ticking: false,
 
-  // The canonical list of attached gamepads, without “holes” (always
+  // The canonical list of attached gamepads, without "holes" (always
   // starting at [0]) and unified between Firefox and Chrome.
   gamepads: [],
 
@@ -42,30 +24,34 @@ var gamepadSupport = {
   // as last time).
   prevTimestamps: [],
 
+  // Feature detecting for Gecko since currently Firefox is the only browser
+  // that fires gamepad events.
+  hasEvents: 'InstallTrigger' in window,
+
   /**
    * Initialize support for Gamepad API.
    */
-  init: function() {
+  init: function () {
     var gamepadSupportAvailable = navigator.getGamepads ||
         !!navigator.webkitGetGamepads ||
         !!navigator.webkitGamepads;
 
     if (!gamepadSupportAvailable) {
-      // It doesn’t seem Gamepad API is available – show a message telling
+      // It doesn't seem Gamepad API is available, show a message telling
       // the visitor about it.
-      tester.showNotSupported();
+      window.tester.showNotSupported();
     } else {
       // Check and see if gamepadconnected/gamepaddisconnected is supported.
-      // If so, listen for those events and don't start polling until a gamepad
-      // has been connected.
-      if ('ongamepadconnected' in window) {
-        window.addEventListener('gamepadconnected',
-                              gamepadSupport.onGamepadConnect, false);
-        window.addEventListener('gamepaddisconnected',
-                                gamepadSupport.onGamepadDisconnect, false);
-      } else {
-        // If connection events are not supported just start polling
+      // If so, listen for those events and don't start polling until a
+      // gamepad has been connected.
+      if (gamepadSupport.hasEvents) {
+        // If connection events are not supported, just start polling.
         gamepadSupport.startPolling();
+      } else {
+        window.addEventListener('gamepadconnected',
+                                gamepadSupport.onGamepadConnect);
+        window.addEventListener('gamepaddisconnected',
+                                gamepadSupport.onGamepadDisconnect);
       }
     }
   },
@@ -73,12 +59,12 @@ var gamepadSupport = {
   /**
    * React to the gamepad being connected.
    */
-  onGamepadConnect: function(event) {
+  onGamepadConnect: function (event) {
     // Add the new gamepad on the list of gamepads to look after.
     gamepadSupport.gamepads.push(event.gamepad);
 
     // Ask the tester to update the screen to show more gamepads.
-    tester.updateGamepads(gamepadSupport.gamepads);
+    window.tester.updateGamepads(gamepadSupport.gamepads);
 
     // Start the polling loop to monitor button changes.
     gamepadSupport.startPolling();
@@ -87,29 +73,30 @@ var gamepadSupport = {
   /**
    * React to the gamepad being disconnected.
    */
-  onGamepadDisconnect: function(event) {
+  onGamepadDisconnect: function (event) {
     // Remove the gamepad from the list of gamepads to monitor.
     for (var i in gamepadSupport.gamepads) {
-      if (gamepadSupport.gamepads[i].index == event.gamepad.index) {
+      if (gamepadSupport.gamepads[i].index === event.gamepad.index) {
         gamepadSupport.gamepads.splice(i, 1);
         break;
       }
     }
 
-    // If no gamepads are left, stop the polling loop.
-    if (gamepadSupport.gamepads.length == 0) {
+    // If no gamepads are left, stop the polling loop (but only if
+    // `gamepadconnected` will get fired when a gamepad is reconnected).
+    if (!gamepadSupport.gamepads.length && gamepadSupport.hasEvents) {
       gamepadSupport.stopPolling();
     }
 
     // Ask the tester to update the screen to remove the gamepad.
-    tester.updateGamepads(gamepadSupport.gamepads);
+    window.tester.updateGamepads(gamepadSupport.gamepads);
   },
 
   /**
    * Starts a polling loop to check for gamepad state.
    */
-  startPolling: function() {
-    // Don’t accidentally start a second loop, man.
+  startPolling: function () {
+    // Don't accidentally start a second loop, man.
     if (!gamepadSupport.ticking) {
       gamepadSupport.ticking = true;
       gamepadSupport.tick();
@@ -120,7 +107,7 @@ var gamepadSupport = {
    * Stops a polling loop by setting a flag which will prevent the next
    * requestAnimationFrame() from being scheduled.
    */
-  stopPolling: function() {
+  stopPolling: function () {
     gamepadSupport.ticking = false;
   },
 
@@ -128,13 +115,13 @@ var gamepadSupport = {
    * A function called with each requestAnimationFrame(). Polls the gamepad
    * status and schedules another poll.
    */
-  tick: function() {
+  tick: function () {
     gamepadSupport.pollStatus();
     gamepadSupport.scheduleNextTick();
   },
 
-  scheduleNextTick: function() {
-    // Only schedule the next frame if we haven’t decided to stop via
+  scheduleNextTick: function () {
+    // Only schedule the next frame if we haven't decided to stop via
     // stopPolling() before.
     if (gamepadSupport.ticking) {
       if (window.requestAnimationFrame) {
@@ -156,34 +143,33 @@ var gamepadSupport = {
    * to update the display accordingly. Should run as close to 60 frames per
    * second as possible.
    */
-  pollStatus: function() {
+  pollStatus: function () {
     // Poll to see if gamepads are connected or disconnected. Necessary
     // only on Chrome.
     gamepadSupport.pollGamepads();
 
-    for (var i in gamepadSupport.gamepads) {
-      var gamepad = gamepadSupport.gamepads[i];
-
-      // Don’t do anything if the current timestamp is the same as previous
-      // one, which means that the state of the gamepad hasn’t changed.
-      // This is only supported by Chrome right now, so the first check
-      // makes sure we’re not doing anything if the timestamps are empty
-      // or undefined.
+    gamepadSupport.gamepads.forEach(function (gamepad, idx) {
+      // Don't do anything if the current timestamp is the same as previous
+      // one, which means that the state of the gamepad hasn't changed.
+      // This is supported by only Chrome right now, so the first check
+      // makes sure we're not doing anything if the timestamps are empty
+      // or `undefined`.
       if (gamepad.timestamp &&
-          (gamepad.timestamp == gamepadSupport.prevTimestamps[i])) {
-        continue;
+          gamepad.timestamp === gamepadSupport.prevTimestamps[idx]) {
+        return;
       }
-      gamepadSupport.prevTimestamps[i] = gamepad.timestamp;
 
-      gamepadSupport.updateDisplay(i);
-    }
+      gamepadSupport.prevTimestamps[idx] = gamepad.timestamp;
+
+      gamepadSupport.updateDisplay(idx);
+    });
   },
 
   // This function is called only on Chrome, which does not yet support
-  // connection/disconnection events, but requires you to monitor
+  // connection/disconnection events but requires you to monitor
   // an array for changes.
-  pollGamepads: function() {
-    // Get the array of gamepads – the first method (getGamepads)
+  pollGamepads: function () {
+    // Get the array of gamepads, the first method (getGamepads)
     // is the most modern one and is supported by Firefox 28+ and
     // Chrome 35+. The second one (webkitGetGamepads) is a deprecated method
     // used by older Chrome builds.
@@ -192,18 +178,18 @@ var gamepadSupport = {
         (navigator.webkitGetGamepads && navigator.webkitGetGamepads());
 
     if (rawGamepads) {
-      // We don’t want to use rawGamepads coming straight from the browser,
-      // since it can have “holes” (e.g. if you plug two gamepads, and then
+      // We don't want to use rawGamepads coming straight from the browser,
+      // since it can have "holes" (e.g. if you plug two gamepads, and then
       // unplug the first one, the remaining one will be at index [1]).
       gamepadSupport.gamepads = [];
 
       // We only refresh the display when we detect some gamepads are new
       // or removed; we do it by comparing raw gamepad table entries to
-      // “undefined.”
+      // `undefined`.
       var gamepadsChanged = false;
 
       for (var i = 0; i < rawGamepads.length; i++) {
-        if (typeof rawGamepads[i] != gamepadSupport.prevRawGamepadTypes[i]) {
+        if (typeof rawGamepads[i] !== gamepadSupport.prevRawGamepadTypes[i]) {
           gamepadsChanged = true;
           gamepadSupport.prevRawGamepadTypes[i] = typeof rawGamepads[i];
         }
@@ -216,56 +202,56 @@ var gamepadSupport = {
       // Ask the tester to refresh the visual representations of gamepads
       // on the screen.
       if (gamepadsChanged) {
-        tester.updateGamepads(gamepadSupport.gamepads);
+        window.tester.updateGamepads(gamepadSupport.gamepads);
       }
     }
   },
 
   // Call the tester with new state and ask it to update the visual
   // representation of a given gamepad.
-  updateDisplay: function(gamepadId) {
+  updateDisplay: function (gamepadId) {
     var gamepad = gamepadSupport.gamepads[gamepadId];
 
     // Update all the buttons (and their corresponding labels) on screen.
-    tester.updateButton(gamepad.buttons[0], gamepadId, 'button-1');
-    tester.updateButton(gamepad.buttons[1], gamepadId, 'button-2');
-    tester.updateButton(gamepad.buttons[2], gamepadId, 'button-3');
-    tester.updateButton(gamepad.buttons[3], gamepadId, 'button-4');
+    window.tester.updateButton(gamepad.buttons[0], gamepadId, 'button-1');
+    window.tester.updateButton(gamepad.buttons[1], gamepadId, 'button-2');
+    window.tester.updateButton(gamepad.buttons[2], gamepadId, 'button-3');
+    window.tester.updateButton(gamepad.buttons[3], gamepadId, 'button-4');
 
-    tester.updateButton(gamepad.buttons[4], gamepadId,
+    window.tester.updateButton(gamepad.buttons[4], gamepadId,
         'button-left-shoulder-top');
-    tester.updateButton(gamepad.buttons[6], gamepadId,
+    window.tester.updateButton(gamepad.buttons[6], gamepadId,
         'button-left-shoulder-bottom');
-    tester.updateButton(gamepad.buttons[5], gamepadId,
+    window.tester.updateButton(gamepad.buttons[5], gamepadId,
         'button-right-shoulder-top');
-    tester.updateButton(gamepad.buttons[7], gamepadId,
+    window.tester.updateButton(gamepad.buttons[7], gamepadId,
         'button-right-shoulder-bottom');
 
-    tester.updateButton(gamepad.buttons[8], gamepadId, 'button-select');
-    tester.updateButton(gamepad.buttons[9], gamepadId, 'button-start');
+    window.tester.updateButton(gamepad.buttons[8], gamepadId, 'button-select');
+    window.tester.updateButton(gamepad.buttons[9], gamepadId, 'button-start');
 
-    tester.updateButton(gamepad.buttons[10], gamepadId, 'stick-1');
-    tester.updateButton(gamepad.buttons[11], gamepadId, 'stick-2');
+    window.tester.updateButton(gamepad.buttons[10], gamepadId, 'stick-1');
+    window.tester.updateButton(gamepad.buttons[11], gamepadId, 'stick-2');
 
-    tester.updateButton(gamepad.buttons[12], gamepadId, 'button-dpad-top');
-    tester.updateButton(gamepad.buttons[13], gamepadId, 'button-dpad-bottom');
-    tester.updateButton(gamepad.buttons[14], gamepadId, 'button-dpad-left');
-    tester.updateButton(gamepad.buttons[15], gamepadId, 'button-dpad-right');
+    window.tester.updateButton(gamepad.buttons[12], gamepadId, 'button-dpad-top');
+    window.tester.updateButton(gamepad.buttons[13], gamepadId, 'button-dpad-bottom');
+    window.tester.updateButton(gamepad.buttons[14], gamepadId, 'button-dpad-left');
+    window.tester.updateButton(gamepad.buttons[15], gamepadId, 'button-dpad-right');
 
     // Update all the analogue sticks.
-    tester.updateAxis(gamepad.axes[0], gamepadId,
+    window.tester.updateAxis(gamepad.axes[0], gamepadId,
         'stick-1-axis-x', 'stick-1', true);
-    tester.updateAxis(gamepad.axes[1], gamepadId,
+    window.tester.updateAxis(gamepad.axes[1], gamepadId,
         'stick-1-axis-y', 'stick-1', false);
-    tester.updateAxis(gamepad.axes[2], gamepadId,
+    window.tester.updateAxis(gamepad.axes[2], gamepadId,
         'stick-2-axis-x', 'stick-2', true);
-    tester.updateAxis(gamepad.axes[3], gamepadId,
+    window.tester.updateAxis(gamepad.axes[3], gamepadId,
         'stick-2-axis-y', 'stick-2', false);
 
     // Update extraneous buttons.
     var extraButtonId = gamepadSupport.TYPICAL_BUTTON_COUNT;
-    while (typeof gamepad.buttons[extraButtonId] != 'undefined') {
-      tester.updateButton(gamepad.buttons[extraButtonId], gamepadId,
+    while (typeof gamepad.buttons[extraButtonId] !== 'undefined') {
+      window.tester.updateButton(gamepad.buttons[extraButtonId], gamepadId,
           'extra-button-' + extraButtonId);
 
       extraButtonId++;
@@ -273,8 +259,8 @@ var gamepadSupport = {
 
     // Update extraneous axes.
     var extraAxisId = gamepadSupport.TYPICAL_AXIS_COUNT;
-    while (typeof gamepad.axes[extraAxisId] != 'undefined') {
-      tester.updateAxis(gamepad.axes[extraAxisId], gamepadId,
+    while (typeof gamepad.axes[extraAxisId] !== 'undefined') {
+      window.tester.updateAxis(gamepad.axes[extraAxisId], gamepadId,
           'extra-axis-' + extraAxisId);
 
       extraAxisId++;
