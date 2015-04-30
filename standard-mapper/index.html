@@ -1,0 +1,108 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>Gamepad Standard Mapper</title>
+    <meta name="viewport" content="width=device-width">
+    <link rel="stylesheet" type="text/css" media="all" href="style.css">
+  </head>
+  <body>
+    <h1>
+      Gamepad API tester
+    </h1>
+    <div id="menu">
+      <input type="radio" name="mode" value="visual" id="mode-visual" checked>
+        <label for="mode-visual">Visual mode</label>
+      <input type="radio" name="mode" value="raw" id="mode-raw">
+        <label for="mode-raw">Raw mode</label>
+    </div>
+
+    <div class="gamepad-warning" id="no-gamepad-support">
+      Your browser does not seem to support Gamepad API, or it might be
+      we’re not detecting it very well. Sorry!
+    </div>
+    <div class="gamepad-warning" id="no-gamepads-connected">
+      No gamepads seem to be connected. Be sure to plug in a gamepad and then
+      press any of its buttons to activate it.
+    </div>
+
+    <ul id="gamepads" class="gamepads"></ul>
+
+    <template id="gamepad-template">
+      <div class="buttons">
+        <div class="face" name="button-1"></div>
+        <div class="face" name="button-2"></div>
+        <div class="face" name="button-3"></div>
+        <div class="face" name="button-4"></div>
+
+        <div class="top-shoulder" name="button-left-shoulder-top"></div>
+        <div class="top-shoulder" name="button-right-shoulder-top"></div>
+        <div class="bottom-shoulder" name="button-left-shoulder-bottom"></div>
+        <div class="bottom-shoulder" name="button-right-shoulder-bottom"></div>
+
+        <div class="select-start" name="button-select"></div>
+        <div class="select-start" name="button-start"></div>
+
+        <div class="stick" name="stick-1"></div>
+        <div class="stick" name="stick-2"></div>
+
+        <div class="face" name="button-dpad-top"></div>
+        <div class="face" name="button-dpad-bottom"></div>
+        <div class="face" name="button-dpad-left"></div>
+        <div class="face" name="button-dpad-right"></div>
+      </div>
+
+      <div class="labels">
+        <label for="button-1" data-name="Face button 1" data-index="buttons[0]">?</label>
+        <label for="button-2" data-name="Face button 2" data-index="buttons[1]">?</label>
+        <label for="button-3" data-name="Face button 3" data-index="buttons[2]">?</label>
+        <label for="button-4" data-name="Face button 4" data-index="buttons[3]">?</label>
+
+        <label for="button-left-shoulder-top" data-name="Left top shoulder" data-index="buttons[4]">?</label>
+        <label for="button-right-shoulder-top" data-name="Right top shoulder" data-index="buttons[5]">?</label>
+        <label for="button-left-shoulder-bottom" data-name="Left bottom shoulder" data-index="buttons[6]">?</label>
+        <label for="button-right-shoulder-bottom" data-name="Right bottom shoulder" data-index="buttons[7]">?</label>
+
+        <label for="button-select" data-name="Select" data-index="buttons[8]">?</label>
+        <label for="button-start" data-name="Start" data-index="buttons[9]">?</label>
+
+        <label for="stick-1" data-name="First stick button" data-index="buttons[10]">?</label>
+        <label for="stick-2" data-name="Second stick button" data-index="buttons[11]">?</label>
+
+        <label for="button-dpad-top" data-name="D-pad top" data-index="buttons[12]">?</label>
+        <label for="button-dpad-bottom" data-name="D-pad bottom" data-index="buttons[13]">?</label>
+        <label for="button-dpad-left" data-name="D-pad left" data-index="buttons[14]">?</label>
+        <label for="button-dpad-right" data-name="D-pad right" data-index="buttons[15]">?</label>
+
+        <label for="stick-1-axis-x" data-name="First stick X" data-index="axes[0]">?</label>
+        <label for="stick-1-axis-y" data-name="First stick Y" data-index="axes[1]">?</label>
+        <label for="stick-2-axis-x" data-name="Second stick X" data-index="axes[2]">?</label>
+        <label for="stick-2-axis-y" data-name="Second stick Y" data-index="axes[3]">?</label>
+
+        <div class="extra-inputs"
+             data-name-extra-button="Extra button"
+             data-name-extra-axis="Extra axis"></div>
+      </div>
+      <div class="index"></div>
+      <marquee class="name" scrolldelay="50" scrollamount="2"></marquee>
+    </template>
+
+    <script src="gamepad.js"></script>
+    <script src="tester.js"></script>
+    <script>
+      // Switch visuals if in an iframe.
+      if (window !== top) {
+        document.body.classList.add('iframe');
+      }
+
+      // Attach event listeners to mode radio buttons.
+      document.querySelector('#mode-visual')
+        .addEventListener('click', tester.updateMode);
+      document.querySelector('#mode-raw')
+        .addEventListener('click', tester.updateMode);
+
+      tester.init();
+      gamepadSupport.init();
+    </script>
+  </body>
+</html>
