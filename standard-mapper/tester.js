@@ -1,3 +1,13 @@
+(function (window) {
+
+function $(sel) {
+  return document.querySelector(sel);
+}
+
+function $$(sel) {
+  return Array.prototype.slice.call(document.querySelectorAll(sel));
+}
+
 var tester = {
   // If the number exceeds this in any way, we treat the label as active
   // and highlight it.
@@ -19,7 +29,7 @@ var tester = {
    * Tell the user the browser doesn't support Gamepad API.
    */
   showNotSupported: function () {
-    document.querySelector('#no-gamepad-support').classList.add('visible');
+    $('#no-gamepad-support').classList.add('visible');
   },
 
   /**
@@ -27,8 +37,8 @@ var tester = {
    * pressed.
    */
   updateMode: function () {
-    var gamepadsEl = document.querySelector('#gamepads');
-    if (document.querySelector('#mode-raw').checked) {
+    var gamepadsEl = $('#gamepads');
+    if ($('#mode-raw').checked) {
       gamepadsEl.classList.add('raw');
     } else {
       gamepadsEl.classList.remove('raw');
@@ -41,20 +51,17 @@ var tester = {
    */
   updateGamepads: function (gamepads) {
     var el;
-    var els = document.querySelectorAll('#gamepads .gamepad');
+    var els = $$('#gamepads .gamepad');
     var extraAxisId;
     var extraButtonId;
     var extraInputsEl;
-    var gamepad;
-    var gamepadsEl = document.querySelector('#gamepads');
-    var i;
+    var gamepadsEl = $('#gamepads');
     var labelEl;
-    var len;
     var padsConnected = false;
 
-    for (i = 0, len = els.length; el < len; i++) {
-      els[i].parentNode.removeChild(els[i]);
-    }
+    els.forEach(function (el) {
+      el.parentNode.removeChild(el);
+    });
 
     if (gamepads) {
       gamepads.forEach(function (gamepad, idx) {
@@ -106,7 +113,7 @@ var tester = {
       });
     }
 
-    var elNoGamepadsConnected = document.querySelector('#no-gamepads-connected');
+    var elNoGamepadsConnected = $('#no-gamepads-connected');
 
     if (padsConnected) {
       elNoGamepadsConnected.classList.remove('visible');
@@ -119,7 +126,7 @@ var tester = {
    * Update a given button on the screen.
    */
   updateButton: function (button, gamepadId, id) {
-    var gamepadEl = document.querySelector('#gamepad-' + gamepadId);
+    var gamepadEl = $('#gamepad-' + gamepadId);
 
     var value, pressed;
 
@@ -163,7 +170,7 @@ var tester = {
    * Update a given analogue stick on the screen.
    */
   updateAxis: function (value, gamepadId, labelId, stickId, horizontal) {
-    var gamepadEl = document.querySelector('#gamepad-' + gamepadId);
+    var gamepadEl = $('#gamepad-' + gamepadId);
 
     // Update the stick visually.
 
@@ -204,3 +211,7 @@ var tester = {
     }
   }
 };
+
+window.tester = tester;
+
+})(window);
