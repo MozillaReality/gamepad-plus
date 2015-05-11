@@ -126,7 +126,12 @@ var Gamepads = function (opts) {
     return new Gamepads(opts);
   }
 
-  self._allowedOpts = ['gamepadAttributesEnabled', 'nonstandardEventsEnabled', 'axisThreshold'];
+  self._allowedOpts = [
+    'gamepadAttributesEnabled',
+    'nonstandardEventsEnabled',
+    'axisThreshold',
+    'indices'
+  ];
   self._gamepadApis = ['getGamepads', 'webkitGetGamepads', 'webkitGamepads'];
   self._gamepadEvents = ['gamepadconnected', 'gamepaddisconnected'];
   self._seenEvents = {};
@@ -135,6 +140,7 @@ var Gamepads = function (opts) {
   self.dataSource = this.getGamepadDataSource();
   self.gamepadAttributesEnabled = true;
   self.gamepadsSupported = self._hasGamepads();
+  self.indices = {};
   self.nonstandardEventsEnabled = true;
   self.previousState = {};
   self.state = {};
@@ -150,7 +156,11 @@ var Gamepads = function (opts) {
   opts = opts || {};
   Object.keys(opts).forEach(function (key) {
     if (self._allowedOpts.indexOf(key) !== -1) {
-      self[key] = opts[key];
+      if (typeof opts[key] === 'object') {
+        self[key] = clone(opts[key]);
+      } else {
+        self[key] = opts[key];
+      }
     }
   });
 };
@@ -492,6 +502,8 @@ Gamepads.prototype.poll = function () {
 
       this._mapGamepad(pad);
 
+      pad.indices = this._getIndices(pad);
+
       pads.push(pad);
     }
   }
@@ -515,6 +527,18 @@ Gamepads.prototype._getAttributes = function (gamepad) {
     name: gamepad.id,
     dataSource: this.dataSource
   };
+};
+
+
+/**
+ * @function
+ * @name Gamepads#_getIndices
+ * @description Return the named indices of a gamepad.
+ * @param {Object} gamepad The gamepad object.
+ * @returns {Object} The named indices for this gamepad.
+ */
+Gamepads.prototype._getIndices = function (gamepad) {
+  return this.indices[gamepad.id] || this.indices.standard || {};
 };
 
 
@@ -632,6 +656,11 @@ Gamepads.prototype._mapGamepad = function (pad) {
       });
     }
   });
+};
+
+
+Gamepads.prototype.setIndices = function (indices) {
+  this.indices = clone(indices);
 };
 
 
