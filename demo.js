@@ -108,7 +108,7 @@ if (gamepads.gamepadsSupported) {
   // fires the `gamepadconnected` event. For the other browsers
   // <https://crbug.com/344556>, we start polling every 100ms until the
   // first gamepad is connected.
-  if (window.utils.browser !== 'firefox') {
+  if (window.Gamepads.utils.browser !== 'firefox') {
     gamepads.nonFirefoxInterval = window.setInterval(function () {
       if (gamepads.poll().length) {
         gamepads.updateStatus();
