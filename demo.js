@@ -14,6 +14,40 @@ var caf = window.cancelRequestAnimationFrame ||
 
 
 var gamepads = new window.Gamepads();
+
+gamepads.setIndices({
+  'standard': {
+    cursorX: 2,
+    cursorY: 3,
+    scrollX: 0,
+    scrollY: 1,
+    back: 9,
+    forward: 10,
+    zoomIn: 5,
+    zoomOut: 1
+  },
+  '46d-c216-Logitech Dual Action': {
+    cursorX: 3,
+    cursorY: 4,
+    scrollX: 1,
+    scrollY: 2,
+    back: 8,
+    forward: 9,
+    zoomIn: 7,
+    zoomOut: 6
+  },
+  '79-6-Generic   USB  Joystick': {
+    cursorX: null,
+    cursorY: null,
+    scrollX: 3,
+    scrollY: 2,
+    back: 6,
+    forward: 7,
+    zoomIn: 9,
+    zoomOut: 8
+  }
+});
+
 gamepads.polling = false;
 
 if (gamepads.gamepadsSupported) {
