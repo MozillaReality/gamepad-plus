@@ -46,79 +46,6 @@ if (!('now' in window.performance)) {
 }
 
 
-var utils = {};
-
-utils.getBrowser = function () {
-  if (!!window.opera || navigator.userAgent.indexOf(' OPR/') >= 0) {
-    // Opera 8.0+ (UA detection to detect Blink/v8-powered Opera).
-    return 'opera';
-  } else if ('chrome' in window) {
-    // Chrome 1+.
-    return 'chrome';
-  } else if (typeof InstallTrigger !== 'undefined') {
-    // Firefox 1.0+.
-    return 'firefox';
-  } else if (Object.prototype.toString.call(window.HTMLElement).indexOf('Constructor') > 0) {
-    // At least Safari 3+: "[object HTMLElementConstructor]".
-    return 'safari';
-  } else if (/*@cc_on!@*/false || !!document.documentMode) {
-    // At least IE6.
-    return 'ie';
-  }
-};
-
-utils.browser = utils.getBrowser();
-
-utils.getEngine = function (browser) {
-  browser = browser || utils.getBrowser();
-
-  if (browser === 'firefox') {
-    return 'gecko';
-  } else {
-    return 'webkit';
-  }
-};
-
-utils.engine = utils.getEngine(utils.browser);
-
-utils.stripLeadingZeros = function (str) {
-  if (typeof str !== 'string') {
-    return str;
-  }
-  return str.replace(/^0+(?=\d+)/g, '');
-};
-
-utils.triggerEvent = function (el, name, data) {
-  data = data || {};
-  data.detail = data.detail || {};
-
-  var event;
-
-  if ('CustomEvent' in window) {
-    event = new CustomEvent(name, data);
-  } else {
-    event = document.createEvent('CustomEvent');
-    event.initCustomEvent(name, data.bubbles, data.cancelable, data.detail);
-  }
-
-  Object.keys(data.detail).forEach(function (key) {
-    event[key] = data.detail[key];
-  });
-
-  el.dispatchEvent(event);
-};
-
-
-if (!('GamepadButton' in window)) {
-  var GamepadButton = window.GamepadButton = function (obj) {
-    return {
-      pressed: obj.pressed,
-      value: obj.value
-    };
-  };
-}
-
-
 var Gamepads = function (opts) {
   var self = this;
 
@@ -173,16 +100,16 @@ Gamepads.prototype._getVendorProductIds = function (gamepad) {
   if (bits.length < 2) {
     match = gamepad.id.match(/vendor: (\w+) product: (\w+)/i);
     if (match) {
-      return match.slice(1).map(utils.stripLeadingZeros);
+      return match.slice(1).map(Gamepads.utils.stripLeadingZeros);
     }
   }
 
   match = gamepad.id.match(/(\w+)-(\w+)/);
   if (match) {
-    return match.slice(1).map(utils.stripLeadingZeros);
+    return match.slice(1).map(Gamepads.utils.stripLeadingZeros);
   }
 
-  return bits.slice(0, 2).map(utils.stripLeadingZeros);
+  return bits.slice(0, 2).map(Gamepads.utils.stripLeadingZeros);
 };
 
 
@@ -467,7 +394,7 @@ Gamepads.prototype.fireConnectionEvent = function (gamepad, connected) {
       gamepad: gamepad
     }
   };
-  utils.triggerEvent(window, name, data);
+  Gamepads.utils.triggerEvent(window, name, data);
 };
 
 
@@ -485,7 +412,7 @@ Gamepads.prototype.fireButtonEvent = function (gamepad, button, value) {
       gamepad: gamepad
     }
   };
-  utils.triggerEvent(window, name, data);
+  Gamepads.utils.triggerEvent(window, name, data);
 };
 
 
@@ -507,7 +434,7 @@ Gamepads.prototype.fireAxisMoveEvent = function (gamepad, axis, value) {
       value: value
     }
   };
-  utils.triggerEvent(window, 'gamepadaxismove', data);
+  Gamepads.utils.triggerEvent(window, 'gamepadaxismove', data);
 };
 
 
@@ -540,7 +467,79 @@ Gamepads.prototype.removeSeenEvent = function (gamepad, e) {
 };
 
 
+Gamepads.utils = {};
+
+Gamepads.utils.getBrowser = function () {
+  if (!!window.opera || navigator.userAgent.indexOf(' OPR/') >= 0) {
+    // Opera 8.0+ (UA detection to detect Blink/v8-powered Opera).
+    return 'opera';
+  } else if ('chrome' in window) {
+    // Chrome 1+.
+    return 'chrome';
+  } else if (typeof InstallTrigger !== 'undefined') {
+    // Firefox 1.0+.
+    return 'firefox';
+  } else if (Object.prototype.toString.call(window.HTMLElement).indexOf('Constructor') > 0) {
+    // At least Safari 3+: "[object HTMLElementConstructor]".
+    return 'safari';
+  } else if (/*@cc_on!@*/false || !!document.documentMode) {
+    // At least IE6.
+    return 'ie';
+  }
+};
+
+Gamepads.utils.browser = Gamepads.utils.getBrowser();
+
+Gamepads.utils.getEngine = function (browser) {
+  browser = browser || Gamepads.utils.getBrowser();
+
+  if (browser === 'firefox') {
+    return 'gecko';
+  } else {
+    return 'webkit';
+  }
+};
+
+Gamepads.utils.engine = Gamepads.utils.getEngine(Gamepads.utils.browser);
+
+Gamepads.utils.stripLeadingZeros = function (str) {
+  if (typeof str !== 'string') {
+    return str;
+  }
+  return str.replace(/^0+(?=\d+)/g, '');
+};
+
+Gamepads.utils.triggerEvent = function (el, name, data) {
+  data = data || {};
+  data.detail = data.detail || {};
+
+  var event;
+
+  if ('CustomEvent' in window) {
+    event = new CustomEvent(name, data);
+  } else {
+    event = document.createEvent('CustomEvent');
+    event.initCustomEvent(name, data.bubbles, data.cancelable, data.detail);
+  }
+
+  Object.keys(data.detail).forEach(function (key) {
+    event[key] = data.detail[key];
+  });
+
+  el.dispatchEvent(event);
+};
+
+
+if (!('GamepadButton' in window)) {
+  var GamepadButton = window.GamepadButton = function (obj) {
+    return {
+      pressed: obj.pressed,
+      value: obj.value
+    };
+  };
+}
+
+
 window.Gamepads = Gamepads;
-window.utils = utils;
 
 })(window);
