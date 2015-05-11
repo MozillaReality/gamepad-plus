@@ -1,5 +1,7 @@
 (function (window) {
 
+'use strict';
+
 function clone(obj) {
   if (obj === null || !(obj instanceof Object)) {
     return obj;
