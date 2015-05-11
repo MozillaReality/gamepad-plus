@@ -95,7 +95,7 @@ utils.triggerEvent = function (el, name, data) {
   var event;
 
   if ('CustomEvent' in window) {
-    event = new CustomEvent(name, data.detail);
+    event = new CustomEvent(name, data);
   } else {
     event = document.createEvent('CustomEvent');
     event.initCustomEvent(name, data.bubbles, data.cancelable, data.detail);
