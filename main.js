@@ -55,22 +55,20 @@ var Gamepads = function (opts) {
     return new Gamepads(opts);
   }
 
-  self._allowedOpts = [
-    'gamepadAttributesEnabled',
-    'nonstandardEventsEnabled',
-    'axisThreshold',
-    'indices'
-  ];
+  var defaultOpts = {
+    'axisThreshold': 0.15,
+    'gamepadAttributesEnabled': true,
+    'gamepadIndicesEnabled': true,
+    'nonstandardEventsEnabled': true,
+    'indices': {}
+  };
   self._gamepadApis = ['getGamepads', 'webkitGetGamepads', 'webkitGamepads'];
   self._gamepadEvents = ['gamepadconnected', 'gamepaddisconnected'];
   self._seenEvents = {};
 
-  self.axisThreshold = 0.15;
   self.dataSource = this.getGamepadDataSource();
-  self.gamepadAttributesEnabled = true;
   self.gamepadsSupported = self._hasGamepads();
   self.indices = {};
-  self.nonstandardEventsEnabled = true;
   self.previousState = {};
   self.state = {};
 
@@ -83,14 +81,8 @@ var Gamepads = function (opts) {
   });
 
   opts = opts || {};
-  Object.keys(opts).forEach(function (key) {
-    if (self._allowedOpts.indexOf(key) !== -1) {
-      if (typeof opts[key] === 'object') {
-        self[key] = clone(opts[key]);
-      } else {
-        self[key] = opts[key];
-      }
-    }
+  Object.keys(defaultOpts).forEach(function (key) {
+    self[key] = key in opts ? clone(opts[key]) : defaultOpts[key];
   });
 };
 
@@ -297,21 +289,45 @@ Gamepads.prototype.poll = function () {
         continue;
       }
 
-      if (this.gamepadAttributesEnabled) {
-        pad.attributes = this._getAttributes(pad);
-      }
-
-      if (!pad.timestamp) {
-        pad.timestamp = window.performance.now();
-      }
-
-      pad.indices = this._getIndices(pad);
+      pad = this.extend(pad);
 
       pads.push(pad);
     }
   }
 
   return pads;
+};
+
+
+/**
+ * @function
+ * @name Gamepads#extend
+ * @description Set new properties on a gamepad object.
+ * @param {Object} gamepad The original gamepad object.
+ * @returns {Object} An extended copy of the gamepad.
+ */
+Gamepads.prototype.extend = function (gamepad) {
+  if (gamepad._extended) {
+    return gamepad;
+  }
+
+  var pad = clone(gamepad);
+
+  pad._extended = true;
+
+  if (this.gamepadAttributesEnabled) {
+    pad.attributes = this._getAttributes(pad);
+  }
+
+  if (!pad.timestamp) {
+    pad.timestamp = window.performance.now();
+  }
+
+  if (this.gamepadIndicesEnabled) {
+    pad.indices = this._getIndices(pad);
+  }
+
+  return pad;
 };
 
 
