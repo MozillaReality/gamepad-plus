@@ -1,6 +1,6 @@
 {
   "name": "gamepad-plus",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "a superb library that extends the Gamepad API with super powers",
   "main": "index.js",
   "repository": {
@@ -27,11 +27,13 @@
     "prod": "export NODE_ENVIRONMENT='production' npm run build",
     "dev": "export NODE_ENVIRONMENT='development' && npm run build && npm run watch",
     "build": "if [[ $NODE_ENVIRONMENT == 'production' ]]; then echo export SOURCE_MAPS=0; else export SOURCE_MAPS=1; fi ; echo $SOURCE_MAPS && mkdir -p dist && browserify src/index.js --standalone Gamepads --debug=$SOURCE_MAPS -t babelify -o dist/gamepads.js",
-    "watch": "onchange src/{*,**/*}.js -- npm run build"
+    "watch": "onchange src/{*,**/*}.js -- npm run build",
+    "release": "release-it"
   },
   "devDependencies": {
     "babelify": "^6.1.0",
     "browserify": "^10.1.3",
-    "onchange": "^1.1.0"
+    "onchange": "^1.1.0",
+    "release-it": "0.0.15"
   }
 }

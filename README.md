@@ -13,6 +13,13 @@ A superb library that extends the [Gamepad API](https://w3c.github.io/gamepad/ga
 
 ## Developers
 
-Running this command will compile the JavaScript as a standalone module to __`dist/gamepads.js`__:
+Run this command to compile the JavaScript as a standalone module to __`dist/gamepads.js`__:
 
     npm run build
+
+
+## Maintainers
+
+Run this command to publish a new tag to GitHub and version to npm:
+
+    npm run release
