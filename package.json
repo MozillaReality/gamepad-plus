@@ -24,7 +24,7 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "npm run dev",
-    "prod": "export NODE_ENVIRONMENT='production' npm run build",
+    "prod": "export NODE_ENVIRONMENT='production' && npm run build",
     "dev": "export NODE_ENVIRONMENT='development' && npm run build && npm run watch",
     "build": "if [[ $NODE_ENVIRONMENT == 'production' ]]; then echo export SOURCE_MAPS=0; else export SOURCE_MAPS=1; fi ; echo $SOURCE_MAPS && mkdir -p dist && browserify src/index.js --standalone Gamepads --debug=$SOURCE_MAPS -t babelify -o dist/gamepads.js",
     "watch": "onchange src/{*,**/*}.js -- npm run build",
