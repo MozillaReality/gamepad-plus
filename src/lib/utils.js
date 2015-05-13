@@ -9,7 +9,7 @@ export default class Utils {
       return obj;
     }
 
-    var ret;
+    var ret = '';
 
     if (obj instanceof Date) {
       ret = new Date();
