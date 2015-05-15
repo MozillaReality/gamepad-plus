@@ -66,7 +66,7 @@ if (gamepads.gamepadsSupported) {
       window.clearInterval(gamepads.pollingInterval);
     }
 
-    window.cancelRequestAnimationFrame(gamepads.updateStatus);
+    window.cancelAnimationFrame(gamepads.updateStatus);
   };
 
   window.addEventListener('gamepadconnected', function (e) {
