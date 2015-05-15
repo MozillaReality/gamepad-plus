@@ -8,8 +8,8 @@ const DEFAULT_CONFIG = {
   'gamepadIndicesEnabled': true,
   'keyEventsEnabled': true,
   'nonstandardEventsEnabled': true,
-  'indices': {},
-  'keyEvents': {}
+  'indices': undefined,
+  'keyEvents': undefined
 };
 
 var DEFAULT_STATE = {
@@ -36,6 +36,7 @@ export default class Gamepads {
     this.dataSource = this.getGamepadDataSource();
     this.gamepadsSupported = this._hasGamepads();
     this.indices = {};
+    this.keyEvents = {};
     this.previousState = {};
     this.state = {};
 
@@ -49,7 +50,7 @@ export default class Gamepads {
 
     config = config || {};
     Object.keys(DEFAULT_CONFIG).forEach((key) => {
-      this[key] = key in config ? utils.clone(config[key]) : DEFAULT_CONFIG[key];
+      this[key] = typeof config[key] === 'undefined' ? DEFAULT_CONFIG[key] : utils.clone(config[key]);
     });
   }
 
@@ -383,23 +384,29 @@ export default class Gamepads {
 
     var buttonName = utils.swap(gamepad.indices)[button];
 
+    if (typeof buttonName === 'undefined') {
+      return;
+    }
+
     var names = value === 1 ? ['keydown', 'keypress'] : ['keyup'];
     var data = this.keyEvents[buttonName];
 
-    if (data) {
-      if (!('bubbles' in data)) {
-        data.bubbles = true;
-      }
-      if (!data.detail) {
-        data.detail = {};
-      }
-      data.detail.button = button;
-      data.detail.gamepad = gamepad;
-
-      names.forEach((name) => {
-        utils.triggerEvent(data.target || document.activeElement, name, data);
-      });
+    if (!data) {
+      return;
     }
+
+    if (!('bubbles' in data)) {
+      data.bubbles = true;
+    }
+    if (!data.detail) {
+      data.detail = {};
+    }
+    data.detail.button = button;
+    data.detail.gamepad = gamepad;
+
+    names.forEach(name => {
+      utils.triggerEvent(data.target || document.activeElement, name, data);
+    });
   }
 
   fireButtonEvent(gamepad, button, value) {
