@@ -5,7 +5,7 @@ export default class Utils {
   }
 
   clone(obj) {
-    if (obj === null || !(obj instanceof Object)) {
+    if (obj === null || typeof obj === 'function' || !(obj instanceof Object)) {
       return obj;
     }
 
