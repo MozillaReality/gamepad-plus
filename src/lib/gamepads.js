@@ -421,7 +421,7 @@ export default class Gamepads extends EventEmitter {
     var name = value === 1 ? 'gamepadbuttondown' : 'gamepadbuttonup';
 
     // Fire internal event.
-    this.emit(name, gamepad);
+    this.emit(name, gamepad, button, value);
 
     if (this.nonstandardEventsEnabled && !('GamepadButtonEvent' in window)) {
       var data = {
@@ -437,8 +437,10 @@ export default class Gamepads extends EventEmitter {
   }
 
   fireAxisMoveEvent(gamepad, axis, value) {
+    var name = 'gamepadaxismove';
+
     // Fire internal event.
-    this.emit('gamepadaxismove', gamepad);
+    this.emit(name, gamepad, axis, value);
 
     if (!this.nonstandardEventsEnabled || 'GamepadAxisMoveEvent' in window) {
       return;
@@ -457,7 +459,7 @@ export default class Gamepads extends EventEmitter {
         value: value
       }
     };
-    utils.triggerEvent(window, 'gamepadaxismove', data);
+    utils.triggerEvent(window, name, data);
   }
 
   fireKeyEvent(gamepad, button, value) {
