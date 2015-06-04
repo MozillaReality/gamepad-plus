@@ -1,6 +1,6 @@
 {
   "name": "gamepad-plus",
-  "version": "1.0.8",
+  "version": "1.0.9",
   "description": "a superb library that extends the Gamepad API with super powers",
   "main": "index.js",
   "repository": {
