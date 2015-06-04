@@ -1,4 +1,6 @@
+import EventEmitter from './event_emitter.js';
 import Utils from './utils.js';
+
 
 var utils = new Utils();
 
@@ -25,12 +27,16 @@ for (var i = 0; i < 17; i++) {
 }
 
 
-export default class Gamepads {
+export default class Gamepads extends EventEmitter {
   constructor(config) {
+    super();
+
     this.polyfill();
 
     this._gamepadApis = ['getGamepads', 'webkitGetGamepads', 'webkitGamepads'];
-    this._gamepadEvents = ['gamepadconnected', 'gamepaddisconnected'];
+    this._gamepadDOMEvents = ['gamepadconnected', 'gamepaddisconnected'];
+    this._gamepadInternalEvents = ['gamepadconnected', 'gamepaddisconnected',
+      'gamepadbuttondown', 'gamepadbuttonup', 'gamepadaxismove'];
     this._seenEvents = {};
 
     this.dataSource = this.getGamepadDataSource();
@@ -40,18 +46,44 @@ export default class Gamepads {
     this.previousState = {};
     this.state = {};
 
-    var addSeenEvent = (e) => {
-      this.addSeenEvent(e.gamepad, e);
-    };
+    // Mark the events we see (keyed off gamepad index)
+    // so we don't fire the same event twice.
+    this._gamepadDOMEvents.forEach(eventName => {
+      window.addEventListener(eventName, e => {
+        this.addSeenEvent(e.gamepad, eventName, 'dom');
 
-    this._gamepadEvents.forEach((eventName) => {
-      window.addEventListener(eventName, addSeenEvent);
+        // Let the events fire again, if they've been disconnected/reconnected.
+        if (eventName === 'gamepaddisconnected') {
+          this.removeSeenEvent(e.gamepad, 'gamepadconnected', 'dom');
+        } else if (eventName === 'gamepadconnected') {
+          this.removeSeenEvent(e.gamepad, 'gamepaddisconnected', 'dom');
+        }
+      });
+    });
+    this._gamepadInternalEvents.forEach(eventName => {
+      this.on(eventName, gamepad => {
+        this.addSeenEvent(gamepad, eventName, 'internal');
+
+        if (eventName === 'gamepaddisconnected') {
+          this.removeSeenEvent(gamepad, 'gamepadconnected', 'internal');
+        } else {
+          this.removeSeenEvent(gamepad, 'gamepaddisconnected', 'internal');
+        }
+      });
     });
 
     config = config || {};
-    Object.keys(DEFAULT_CONFIG).forEach((key) => {
+    Object.keys(DEFAULT_CONFIG).forEach(key => {
       this[key] = typeof config[key] === 'undefined' ? DEFAULT_CONFIG[key] : utils.clone(config[key]);
     });
+
+    if (this.gamepadIndicesEnabled) {
+      this.on('gamepadconnected', this._onGamepadConnected.bind(this));
+      this.on('gamepaddisconnected', this._onGamepadDisconnected.bind(this));
+      this.on('gamepadbuttondown', this._onGamepadButtonDown.bind(this));
+      this.on('gamepadbuttonup', this._onGamepadButtonUp.bind(this));
+      this.on('gamepadaxismove', this._onGamepadAxisMove.bind(this));
+    }
   }
 
   polyfill() {
@@ -119,27 +151,18 @@ export default class Gamepads {
   }
 
   updateGamepad(gamepad) {
-    gamepad = gamepad || DEFAULT_STATE;
-
     this.previousState[gamepad.index] = utils.clone(this.state[gamepad.index] || DEFAULT_STATE);
-    this.state[gamepad.index] = utils.clone(gamepad);
+    this.state[gamepad.index] = gamepad ? utils.clone(gamepad) : DEFAULT_STATE;
 
-    if (!this.hasSeenEvent(gamepad, {type: 'gamepadconnected'})) {
-      this.fireConnectionEvent(gamepad, true);
-    }
-  }
-
-  existsGamepad(gamepad) {
-    return gamepad.index in this.state;
+    // Fire connection event, if gamepad was actually connected.
+    this.fireConnectionEvent(this.state[gamepad.index], true);
   }
 
   removeGamepad(gamepad) {
     delete this.state[gamepad.index];
 
-    if (!this.hasSeenEvent(gamepad, {type: 'gamepaddisconnected'})) {
-      this.removeSeenEvent(gamepad, {type: 'gamepadconnected'});
-      this.fireConnectionEvent(gamepad, false);
-    }
+    // Fire disconnection event.
+    this.fireConnectionEvent(gamepad, false);
   }
 
   observeButtonChanges(gamepad) {
@@ -153,7 +176,7 @@ export default class Gamepads {
 
     currentPad.buttons.forEach((button, buttonIdx) => {
       if (button.value !== previousPad.buttons[buttonIdx].value) {
-        // Fire non-standard events, if needed.
+        // Fire button events.
         this.fireButtonEvent(currentPad, buttonIdx, button.value);
 
         // Fire synthetic keyboard events, if needed.
@@ -172,7 +195,7 @@ export default class Gamepads {
     }
 
     currentPad.axes.forEach((axis, axisIdx) => {
-      // Fire non-standard events, if needed.
+      // Fire axis events.
       if (axis !== previousPad.axes[axisIdx]) {
         this.fireAxisMoveEvent(currentPad, axisIdx, axis);
       }
@@ -187,27 +210,32 @@ export default class Gamepads {
    *   This must be called every frame for events to work.
    */
   update() {
-    var previousPad;
-    var currentPad;
+    var activePads = {};
 
-    this.poll().forEach((pad) => {
-      // Add/update connected gamepads (and fire polyfilled events, if needed).
+    this.poll().forEach(pad => {
+      // Keep track of which gamepads are still active (not disconnected).
+      activePads[pad.index] = true;
+
+      // Add/update connected gamepads
+      // (and fire internal events + polyfilled events, if needed).
       this.updateGamepad(pad);
 
-      // Fire polyfilled non-standard events, if needed.
+      // Never seen this actually be the case, but if a pad is still in the
+      // `navigator.getGamepads()` list and it's disconnected, emit the event.
+      if (!pad.connected) {
+        this.removeGamepad(this.state[padIdx]);
+      }
+
+      // Fire internal events + polyfilled non-standard events, if needed.
       this.observeButtonChanges(pad);
       this.observeAxisChanges(pad);
     });
 
-    Object.keys(this.previousState).forEach((padIdx) => {
-      previousPad = this.previousState[padIdx];
-      currentPad = this.state[padIdx];
-
-      // Remove disconnected gamepads (and fire polyfilled events, if needed).
-      if (previousPad && this.existsGamepad(previousPad) &&
-          !this.existsGamepad(currentPad)) {
-
-        this.removeGamepad(previousPad);
+    Object.keys(this.state).forEach(padIdx => {
+      if (!(padIdx in activePads)) {
+        // Remove disconnected gamepads
+        // (and fire internal events + polyfilled events, if needed).
+        this.removeGamepad(this.state[padIdx]);
       }
     });
   }
@@ -367,18 +395,73 @@ export default class Gamepads {
 
   fireConnectionEvent(gamepad, connected) {
     var name = connected ? 'gamepadconnected' : 'gamepaddisconnected';
+
+    if (!this.hasSeenEvent(gamepad, name, 'internal')) {
+      // Fire internal event.
+      this.emit(name, gamepad);
+    }
+
+    // Don't fire the 'gamepadconnected'/'gamepaddisconnected' events if the
+    // browser has already fired them. (Unfortunately, we can't feature detect
+    // if they'll get fired.)
+    if (!this.hasSeenEvent(gamepad, name, 'dom')) {
+      var data = {
+        bubbles: false,
+        cancelable: false,
+        detail: {
+          gamepad: gamepad
+        }
+      };
+
+      utils.triggerEvent(window, name, data);
+    }
+  }
+
+  fireButtonEvent(gamepad, button, value) {
+    var name = value === 1 ? 'gamepadbuttondown' : 'gamepadbuttonup';
+
+    // Fire internal event.
+    this.emit(name, gamepad);
+
+    if (this.nonstandardEventsEnabled && !('GamepadButtonEvent' in window)) {
+      var data = {
+        bubbles: false,
+        cancelable: false,
+        detail: {
+          button: button,
+          gamepad: gamepad
+        }
+      };
+      utils.triggerEvent(window, name, data);
+    }
+  }
+
+  fireAxisMoveEvent(gamepad, axis, value) {
+    // Fire internal event.
+    this.emit('gamepadaxismove', gamepad);
+
+    if (!this.nonstandardEventsEnabled || 'GamepadAxisMoveEvent' in window) {
+      return;
+    }
+
+    if (Math.abs(value) < this.axisThreshold) {
+      return;
+    }
+
     var data = {
       bubbles: false,
       cancelable: false,
       detail: {
-        gamepad: gamepad
+        axis: axis,
+        gamepad: gamepad,
+        value: value
       }
     };
-    utils.triggerEvent(window, name, data);
+    utils.triggerEvent(window, 'gamepadaxismove', data);
   }
 
   fireKeyEvent(gamepad, button, value) {
-    if (!this.keyEventsEnabled) {
+    if (!this.keyEventsEnabled || !this.keyEvents) {
       return;
     }
 
@@ -409,69 +492,22 @@ export default class Gamepads {
     });
   }
 
-  fireButtonEvent(gamepad, button, value) {
-    if (!this.nonstandardEventsEnabled || 'GamepadButtonEvent' in window) {
-      return;
-    }
+  addSeenEvent(gamepad, eventType, namespace) {
+    var key = [gamepad.index, eventType, namespace].join('.');
 
-    var name = value === 1 ? 'gamepadbuttondown' : 'gamepadbuttonup';
-    var data = {
-      bubbles: false,
-      cancelable: false,
-      detail: {
-        button: button,
-        gamepad: gamepad
-      }
-    };
-    utils.triggerEvent(window, name, data);
+    this._seenEvents[key] = true;
   }
 
-  fireAxisMoveEvent(gamepad, axis, value) {
-    if (!this.nonstandardEventsEnabled || 'GamepadAxisMoveEvent' in window) {
-      return;
-    }
+  hasSeenEvent(gamepad, eventType, namespace) {
+    var key = [gamepad.index, eventType, namespace].join('.');
 
-    if (Math.abs(value) < this.axisThreshold) {
-      return;
-    }
-
-    var data = {
-      bubbles: false,
-      cancelable: false,
-      detail: {
-        axis: axis,
-        gamepad: gamepad,
-        value: value
-      }
-    };
-    utils.triggerEvent(window, 'gamepadaxismove', data);
+    return !!this._seenEvents[key];
   }
 
+  removeSeenEvent(gamepad, eventType, namespace) {
+    var key = [gamepad.index, eventType, namespace].join('.');
 
-  addSeenEvent(gamepad, e) {
-    if (typeof this._seenEvents[gamepad.index] === 'undefined') {
-      this._seenEvents[gamepad.index] = {};
-    }
-
-    this._seenEvents[gamepad.index][e.type] = e;
-  }
-
-  hasSeenEvent(gamepad, e) {
-    if (this._seenEvents[gamepad.index]) {
-      return e.type in this._seenEvents[gamepad.index];
-    }
-
-    return false;
-  }
-
-  removeSeenEvent(gamepad, e) {
-    if (e.type) {
-      if (this._seenEvents[gamepad.index]) {
-        delete this._seenEvents[gamepad.index][e.type];
-      }
-    } else {
-      delete this._seenEvents[gamepad.index];
-    }
+    delete this._seenEvents[key];
   }
 
   buttonEvent2axisEvent(e) {
@@ -483,6 +519,97 @@ export default class Gamepads {
       e.value = 0.0;
     }
     return e;
+  }
+
+  /**
+   * Returns whether a `button` index equals the supplied `key`.
+   *
+   * Useful for determining whether ``navigator.getGamepads()[0].buttons[`$button`]``
+   * has any bindings defined (in `FrameManager`).
+   *
+   * @param {Number} button Index of gamepad button (e.g., `4`).
+   * @param {String} key Human-readable format for button binding (e.g., 'b4').
+   */
+  _buttonEqualsKey(button, key) {
+    return 'b' + button === key.trim().toLowerCase();
+  }
+
+  /**
+   * Returns whether an `axis` index equals the supplied `key`.
+   *
+   * Useful for determining whether ``navigator.getGamepads()[0].axes[`$button`]``
+   * has any bindings defined (in `FrameManager`).
+   *
+   * @param {Number} button Index of gamepad axis (e.g., `1`).
+   * @param {String} key Human-readable format for button binding (e.g., 'a1').
+   */
+  _axisEqualsKey(axis, key) {
+    return 'a' + axis === key.trim().toLowerCase();
+  }
+
+  /**
+   * Calls any bindings defined for 'connected' (in `FrameManager`).
+   *
+   * (Called by event listener for `gamepadconnected`.)
+   *
+   * @param {Gamepad} gamepad Gamepad object (after it's been wrapped by gamepad-plus).
+   */
+  _onGamepadConnected(gamepad) {
+    if ('connected' in gamepad.indices) {
+      gamepad.indices.connected(gamepad);
+    }
+  }
+
+  /**
+   * Calls any bindings defined for 'disconnected' (in `FrameManager`).
+   *
+   * (Called by event listener for `gamepadconnected`.)
+   *
+   * @param {Gamepad} gamepad Gamepad object (after it's been wrapped by gamepad-plus).
+   */
+  _onGamepadDisconnected(gamepad) {
+    if ('disconnected' in gamepad.indices) {
+      gamepad.indices.disconnected(gamepad);
+    }
+  }
+
+  /**
+   * Calls any bindings defined for buttons (e.g., 'b4' in `FrameManager`).
+   *
+   * (Called by event listener for `gamepadconnected`.)
+   *
+   * @param {Gamepad} gamepad Gamepad object (after it's been wrapped by gamepad-plus).
+   * @param {Number} button Index of gamepad button (integer) being released
+   *                        (per `gamepadbuttonup` event).
+   */
+  _onGamepadButtonUp(gamepad, button) {
+    for (var key in gamepad.indices) {
+      if (this._buttonEqualsKey(button, key)) {
+        gamepad.indices[key](gamepad, button);
+      }
+    }
+  }
+
+  _onGamepadButtonDown(gamepad, button) {
+  }
+
+  /**
+   * Calls any bindings defined for axes (e.g., 'a1' in `FrameManager`).
+   *
+   * (Called by event listener for `gamepadaxismove`.)
+   *
+   * @param {Gamepad} gamepad Gamepad object (after it's been wrapped by gamepad-plus).
+   * @param {Number} axis Index of gamepad axis (integer) being changed
+   *                      (per `gamepadaxismove` event).
+   * @param {Number} value Value of gamepad axis (from -1.0 to 1.0) being
+   *                       changed (per `gamepadaxismove` event).
+   */
+  _onGamepadAxisMove(gamepad, axis, value) {
+    for (var key in gamepad.indices) {
+      if (this._axisEqualsKey(axis, key)) {
+        gamepad.indices[key](gamepad, axis, value);
+      }
+    }
   }
 }
 
