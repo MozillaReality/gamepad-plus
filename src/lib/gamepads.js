@@ -532,8 +532,16 @@ export default class Gamepads extends EventEmitter {
    * @param {Number} button Index of gamepad button (e.g., `4`).
    * @param {String} key Human-readable format for button binding (e.g., 'b4').
    */
-  _buttonEqualsKey(button, key) {
-    return 'b' + button === key.trim().toLowerCase();
+  _buttonDownEqualsKey(button, key) {
+    return 'b' + button + '.down' === key.trim().toLowerCase();
+  }
+
+  _buttonUpEqualsKey(button, key) {
+    var keyClean = key.trim().toLowerCase();
+    return (
+      'b' + button + '.up' === keyClean ||
+      'b' + button === keyClean
+    );
   }
 
   /**
@@ -545,7 +553,7 @@ export default class Gamepads extends EventEmitter {
    * @param {Number} button Index of gamepad axis (e.g., `1`).
    * @param {String} key Human-readable format for button binding (e.g., 'a1').
    */
-  _axisEqualsKey(axis, key) {
+  _axisMoveEqualsKey(axis, key) {
     return 'a' + axis === key.trim().toLowerCase();
   }
 
@@ -576,7 +584,24 @@ export default class Gamepads extends EventEmitter {
   }
 
   /**
-   * Calls any bindings defined for buttons (e.g., 'b4' in `FrameManager`).
+   * Calls any bindings defined for buttons (e.g., 'b4.up' in `FrameManager`).
+   *
+   * (Called by event listener for `gamepadconnected`.)
+   *
+   * @param {Gamepad} gamepad Gamepad object (after it's been wrapped by gamepad-plus).
+   * @param {Number} button Index of gamepad button (integer) being pressed
+   *                        (per `gamepadbuttondown` event).
+   */
+  _onGamepadButtonDown(gamepad, button) {
+    for (var key in gamepad.indices) {
+      if (this._buttonDownEqualsKey(button, key)) {
+        gamepad.indices[key](gamepad, button);
+      }
+    }
+  }
+
+  /**
+   * Calls any bindings defined for buttons (e.g., 'b4.down' in `FrameManager`).
    *
    * (Called by event listener for `gamepadconnected`.)
    *
@@ -586,13 +611,10 @@ export default class Gamepads extends EventEmitter {
    */
   _onGamepadButtonUp(gamepad, button) {
     for (var key in gamepad.indices) {
-      if (this._buttonEqualsKey(button, key)) {
+      if (this._buttonUpEqualsKey(button, key)) {
         gamepad.indices[key](gamepad, button);
       }
     }
-  }
-
-  _onGamepadButtonDown(gamepad, button) {
   }
 
   /**
@@ -608,7 +630,7 @@ export default class Gamepads extends EventEmitter {
    */
   _onGamepadAxisMove(gamepad, axis, value) {
     for (var key in gamepad.indices) {
-      if (this._axisEqualsKey(axis, key)) {
+      if (this._axisMoveEqualsKey(axis, key)) {
         gamepad.indices[key](gamepad, axis, value);
       }
     }
