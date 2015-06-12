@@ -21,7 +21,7 @@ var DEFAULT_STATE = {
   axes: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
 };
 
-for (var i = 0, n = buttons.length; i < n; i++) {
+for (var i = 0; i < 20; i++) {
   DEFAULT_STATE.buttons[i] = {
     pressed: false,
     value: 0.0
