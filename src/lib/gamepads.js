@@ -15,11 +15,13 @@ const DEFAULT_CONFIG = {
 };
 
 var DEFAULT_STATE = {
-  buttons: new Array(17),
-  axes: [0.0, 0.0, 0.0, 0.0]
+  // The standard gamepad has 4 axes and 17 buttons.
+  // Some gamepads have 5-6 axes and 18-20 buttons.
+  buttons: new Array(20),
+  axes: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
 };
 
-for (var i = 0; i < 17; i++) {
+for (var i = 0, n = buttons.length; i < n; i++) {
   DEFAULT_STATE.buttons[i] = {
     pressed: false,
     value: 0.0
