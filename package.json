@@ -2,7 +2,7 @@
   "name": "gamepad-plus",
   "version": "1.0.12",
   "description": "a superb library that extends the Gamepad API with super powers",
-  "main": "index.js",
+  "main": "dist/gamepads.js",
   "repository": {
     "type": "git",
     "url": "https://github.com/cvan/gamepad-plus.git"
