@@ -11,6 +11,11 @@ A superb library that extends the [Gamepad API](https://w3c.github.io/gamepad/ga
 * attach an object of attributes about the gamepad and data source
 
 
+## Example
+
+[View example of sample usage](https://mozvr.github.io/gamepad-plus/) ([source](https://github.com/MozVR/gamepad-plus/blob/master/demo.js))
+
+
 ## Developers
 
 Run this command to compile the JavaScript as a standalone module to __`dist/gamepads.js`__:
