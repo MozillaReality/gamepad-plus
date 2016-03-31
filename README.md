@@ -28,3 +28,8 @@ Run this command to compile the JavaScript as a standalone module to __`dist/gam
 Run this command to publish a new tag to GitHub and version to npm:
 
     npm run release
+
+
+## License
+
+This program is free software and is distributed under an [MIT License](LICENSE).
