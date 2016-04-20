@@ -127,10 +127,10 @@ if (gamepads.gamepadsSupported) {
   // If you wish to manually poll for the gamepads, you can do something like this:
   // 
   // ```js
-  // var pollingInterval = window.setInterval(function () {
+  // gamepads.pollingInterval = window.setInterval(function () {
   //   if (gamepads.poll().length) {
   //     gamepads.updateStatus();
-  //     window.clearInterval(pollingInterval);
+  //     window.clearInterval(gamepads.pollingInterval);
   //   }
   // }, 100);
   // ```
