@@ -123,19 +123,17 @@ if (gamepads.gamepadsSupported) {
     });
   }
 
-
-  // At the time of this writing, Firefox is the only browser that correctly
-  // fires the `gamepadconnected` event. For the other browsers
-  // <https://crbug.com/344556>, we start polling every 100ms until the
-  // first gamepad is connected.
-  if (Gamepads.utils.browser !== 'firefox') {
-    gamepads.pollingInterval = window.setInterval(function () {
-      if (gamepads.poll().length) {
-        gamepads.updateStatus();
-        window.clearInterval(gamepads.pollingInterval);
-      }
-    }, 100);
-  }
+  // At the time of this writing, Firefox and Chrome fire the `gamepadconnected` event.
+  // If you wish to manually poll for the gamepads, you can do something like this:
+  // 
+  // ```js
+  // var pollingInterval = window.setInterval(function () {
+  //   if (gamepads.poll().length) {
+  //     gamepads.updateStatus();
+  //     window.clearInterval(pollingInterval);
+  //   }
+  // }, 100);
+  // ```
 }
 
 window.gamepads = gamepads;
