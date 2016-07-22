@@ -48,8 +48,10 @@ var gamepadConfig = {
   }
 };
 
+
+
 console.log("Has gamepads API support ", Gamepads.hasGamepads());
-console.log("Get Gamepads", Gamepads.getGamepads());
+//console.log("Get Gamepads", Gamepads.hasGamepads());
 
 
 var gamepads = new Gamepads(gamepadConfig);
@@ -57,15 +59,11 @@ var gamepads = new Gamepads(gamepadConfig);
 gamepads.polling = false;
 
 if (gamepads.gamepadsSupported) {
-
-
-
   gamepads.updateStatus = function () {
     gamepads.polling = true;
     gamepads.update();
     window.requestAnimationFrame(gamepads.updateStatus);
   };
-
 
   gamepads.cancelLoop = function () {
     gamepads.polling = false;
@@ -133,7 +131,7 @@ if (gamepads.gamepadsSupported) {
 
   // At the time of this writing, Firefox and Chrome fire the `gamepadconnected` event.
   // If you wish to manually poll for the gamepads, you can do something like this:
-  // 
+  //
   // ```js
   // gamepads.pollingInterval = window.setInterval(function () {
   //   if (gamepads.poll().length) {
