@@ -35,7 +35,7 @@ export default class Gamepads extends EventEmitter {
 
     this.polyfill();
 
-    this._gamepadApis = ['getGamepads', 'webkitGetGamepads', 'webkitGamepads'];
+    //this.gamepadApis = ['getGamepads', 'webkitGetGamepads', 'webkitGamepads'];
     this._gamepadDOMEvents = ['gamepadconnected', 'gamepaddisconnected'];
     this._gamepadInternalEvents = ['gamepadconnected', 'gamepaddisconnected',
       'gamepadbuttondown', 'gamepadbuttonup', 'gamepadaxismove'];
@@ -88,6 +88,15 @@ export default class Gamepads extends EventEmitter {
     }
   }
 
+  /**
+   * Make gamepads API support check static
+   * @returns {string[]}
+   */
+  static get gamepadApis() {
+    return ['getGamepads', 'webkitGetGamepads', 'webkitGamepads'];
+  }
+
+
   polyfill() {
     if (this._polyfilled) {
       return;
@@ -134,22 +143,38 @@ export default class Gamepads extends EventEmitter {
     return bits.slice(0, 2).map(utils.stripLeadingZeros);
   }
 
-  _hasGamepads() {
-    for (var i = 0, len = this._gamepadApis.length; i < len; i++) {
-      if (this._gamepadApis[i] in navigator) {
+  /**
+   * Make gamepads API support static
+   * @returns {boolean}
+   */
+  static hasGamepads() {
+    for (var i = 0, len = Gamepads.gamepadApis.length; i < len; i++) {
+      if (Gamepads.gamepadApis[i] in navigator) {
         return true;
       }
     }
     return false;
   }
 
-  _getGamepads() {
-    for (var i = 0, len = this._gamepadApis.length; i < len; i++) {
-      if (this._gamepadApis[i] in navigator) {
-        return navigator[this._gamepadApis[i]]();
+  /**
+   * Make gamepads API support static
+   * @returns {*}
+   */
+  static getGamepads() {
+    for (var i = 0, len = Gamepads.gamepadApis.length; i < len; i++) {
+      if (Gamepads.gamepadApis[i] in navigator) {
+        return navigator[this.gamepadApis[i]]();
       }
     }
     return [];
+  }
+
+  _hasGamepads() {
+    return Gamepads.hasGamepads();
+  }
+
+  _getGamepads() {
+     return Gamepads.getGamepads();
   }
 
   updateGamepad(gamepad) {

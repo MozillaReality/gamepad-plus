@@ -142,7 +142,7 @@ var Gamepads = (function (_EventEmitter) {
 
     this.polyfill();
 
-    this._gamepadApis = ['getGamepads', 'webkitGetGamepads', 'webkitGamepads'];
+    //this.gamepadApis = ['getGamepads', 'webkitGetGamepads', 'webkitGamepads'];
     this._gamepadDOMEvents = ['gamepadconnected', 'gamepaddisconnected'];
     this._gamepadInternalEvents = ['gamepadconnected', 'gamepaddisconnected', 'gamepadbuttondown', 'gamepadbuttonup', 'gamepadaxismove'];
     this._seenEvents = {};
@@ -194,6 +194,11 @@ var Gamepads = (function (_EventEmitter) {
     }
   }
 
+  /**
+   * Make gamepads API support check static
+   * @returns {string[]}
+   */
+
   _createClass(Gamepads, [{
     key: 'polyfill',
     value: function polyfill() {
@@ -242,25 +247,20 @@ var Gamepads = (function (_EventEmitter) {
 
       return bits.slice(0, 2).map(utils.stripLeadingZeros);
     }
+
+    /**
+     * Make gamepads API support static
+     * @returns {boolean}
+     */
   }, {
     key: '_hasGamepads',
     value: function _hasGamepads() {
-      for (var i = 0, len = this._gamepadApis.length; i < len; i++) {
-        if (this._gamepadApis[i] in navigator) {
-          return true;
-        }
-      }
-      return false;
+      return Gamepads.hasGamepads();
     }
   }, {
     key: '_getGamepads',
     value: function _getGamepads() {
-      for (var i = 0, len = this._gamepadApis.length; i < len; i++) {
-        if (this._gamepadApis[i] in navigator) {
-          return navigator[this._gamepadApis[i]]();
-        }
-      }
-      return [];
+      return Gamepads.getGamepads();
     }
   }, {
     key: 'updateGamepad',
@@ -792,6 +792,36 @@ var Gamepads = (function (_EventEmitter) {
           gamepad.indices[key](gamepad, axis, value);
         }
       }
+    }
+  }], [{
+    key: 'hasGamepads',
+    value: function hasGamepads() {
+      for (var i = 0, len = Gamepads.gamepadApis.length; i < len; i++) {
+        if (Gamepads.gamepadApis[i] in navigator) {
+          return true;
+        }
+      }
+      return false;
+    }
+
+    /**
+     * Make gamepads API support static
+     * @returns {*}
+     */
+  }, {
+    key: 'getGamepads',
+    value: function getGamepads() {
+      for (var i = 0, len = Gamepads.gamepadApis.length; i < len; i++) {
+        if (Gamepads.gamepadApis[i] in navigator) {
+          return navigator[this.gamepadApis[i]]();
+        }
+      }
+      return [];
+    }
+  }, {
+    key: 'gamepadApis',
+    get: function get() {
+      return ['getGamepads', 'webkitGetGamepads', 'webkitGamepads'];
     }
   }]);
 

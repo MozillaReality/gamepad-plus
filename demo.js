@@ -48,16 +48,24 @@ var gamepadConfig = {
   }
 };
 
+console.log("Has gamepads API support ", Gamepads.hasGamepads());
+console.log("Get Gamepads", Gamepads.getGamepads());
+
+
 var gamepads = new Gamepads(gamepadConfig);
 
 gamepads.polling = false;
 
 if (gamepads.gamepadsSupported) {
+
+
+
   gamepads.updateStatus = function () {
     gamepads.polling = true;
     gamepads.update();
     window.requestAnimationFrame(gamepads.updateStatus);
   };
+
 
   gamepads.cancelLoop = function () {
     gamepads.polling = false;
