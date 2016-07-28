@@ -89,13 +89,12 @@ export default class Gamepads extends EventEmitter {
   }
 
   /**
-   * Make gamepads API support check static
+   * Make gamepads API support check static.
    * @returns {string[]}
    */
   static get gamepadApis() {
     return ['getGamepads', 'webkitGetGamepads', 'webkitGamepads'];
   }
-
 
   polyfill() {
     if (this._polyfilled) {
@@ -144,7 +143,7 @@ export default class Gamepads extends EventEmitter {
   }
 
   /**
-   * Make gamepads API support static
+   * Make gamepads API support static.
    * @returns {boolean}
    */
   static hasGamepads() {
@@ -157,8 +156,9 @@ export default class Gamepads extends EventEmitter {
   }
 
   /**
-   * Make gamepads API support static
-   * @returns {*}
+   * Make gamepads API support static.
+   * Returns the supported Gamepad api.
+   * @returns {Gamepad}
    */
   static getGamepads() {
     for (var i = 0, len = Gamepads.gamepadApis.length; i < len; i++) {

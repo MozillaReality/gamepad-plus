@@ -48,10 +48,7 @@ var gamepadConfig = {
   }
 };
 
-
-
-console.log("Has gamepads API support ", Gamepads.hasGamepads());
-//console.log("Get Gamepads", Gamepads.hasGamepads());
+console.log('Gamepads detected', Gamepads.hasGamepads());
 
 
 var gamepads = new Gamepads(gamepadConfig);
