@@ -158,7 +158,7 @@ export default class Gamepads extends EventEmitter {
   /**
    * Make gamepads API support static.
    * Returns the supported Gamepad api.
-   * @returns {Gamepad}
+   * @returns {Gamepad[]}
    */
   static getGamepads() {
     for (var i = 0, len = Gamepads.gamepadApis.length; i < len; i++) {
