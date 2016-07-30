@@ -48,6 +48,9 @@ var gamepadConfig = {
   }
 };
 
+console.log('Gamepads detected', Gamepads.hasGamepads());
+
+
 var gamepads = new Gamepads(gamepadConfig);
 
 gamepads.polling = false;
@@ -125,7 +128,7 @@ if (gamepads.gamepadsSupported) {
 
   // At the time of this writing, Firefox and Chrome fire the `gamepadconnected` event.
   // If you wish to manually poll for the gamepads, you can do something like this:
-  // 
+  //
   // ```js
   // gamepads.pollingInterval = window.setInterval(function () {
   //   if (gamepads.poll().length) {
